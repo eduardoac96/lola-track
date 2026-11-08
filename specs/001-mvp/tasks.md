@@ -1,4 +1,4 @@
-# 001 — Nido MVP · Tareas
+# 001 — Lola Track MVP · Tareas
 
 Formato: `[ID] [P?] descripción → criterio de hecho`. `[P]` = paralelizable con la anterior.
 Orden pensado para ROASTER/FIXER: cada tarea es un PR pequeño con su criterio verificable.
@@ -13,7 +13,7 @@ Orden pensado para ROASTER/FIXER: cada tarea es un PR pequeño con su criterio v
 - [ ] **T07** `lib/quickAdd.ts` (ya incluido) + componente QuickAdd con vista previa de chips → los tests de `quickAdd.test.ts` pasan.
 - [ ] **T08** Pendientes: lista agrupada, filtros, completar/reabrir (sin presupuesto aún), editar en sheet, eliminar → criterios H3.
 - [ ] **T09** Realtime: `data/realtime.ts` suscribe por hogar y actualiza la cache → un cambio en el dispositivo A aparece en B en <2 s.
-- [ ] **T10** PWA: manifest (name "Nido", theme `#5B47E0`), iconos, apple-touch-icon, `display: standalone`, SW con precache → instalable desde Safari en iPhone.
+- [ ] **T10** PWA: manifest (name "Lola Track", short_name "Lola", theme `#5B47E0`), iconos, apple-touch-icon, `display: standalone`, SW con precache → instalable desde Safari en iPhone.
 - [ ] **T11** Deploy en Cloudflare Pages + URL de Supabase en Auth redirect/site URL → los dos la usan desde el iPhone.
 
 ## Fase 1 · Presupuesto, agenda y "Ahora" (~6 h)

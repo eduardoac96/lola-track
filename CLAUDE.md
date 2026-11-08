@@ -1,4 +1,4 @@
-# CLAUDE.md — Nido
+# CLAUDE.md — Lola Track
 
 App personal (PWA) de pendientes, agenda y presupuesto para un hogar de 2 personas. Fuente de verdad: `specs/001-mvp/` (spec → plan → tasks). Si algo choca con el spec, el spec gana; si el spec está mal, propón el cambio en el PR.
 

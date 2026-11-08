@@ -1,7 +1,7 @@
-# 001 — Nido MVP · Spec
+# 001 — Lola Track MVP · Spec
 
 > Una app para dos personas (hogar) que reúne **pendientes**, **agenda** y **presupuesto** en un solo lugar, funciona en iPhone, iPad y la web, y se sincroniza al instante.
-> Mockup de referencia: canvas "Nido — mockup app de pendientes en pareja" (4 pantallas: Ahora, Pendientes, Agenda, Presupuesto).
+> Mockup de referencia: canvas "Lola Track — mockup app de pendientes en pareja" (4 pantallas: Ahora, Pendientes, Agenda, Presupuesto).
 
 ## 1. Problema
 Preparar la casa para la llegada de los niños genera decenas de compras, arreglos y trámites. Hoy no están documentados, se olvidan, se duplican y no se sabe cuánto se lleva gastado.

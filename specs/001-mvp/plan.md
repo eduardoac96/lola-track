@@ -1,4 +1,4 @@
-# 001 — Nido MVP · Plan técnico
+# 001 — Lola Track MVP · Plan técnico
 
 ## 1. Stack
 | Capa | Elección | Por qué |
@@ -15,7 +15,7 @@
 
 ## 2. Estructura
 ```
-nido/
+lola-track/
 ├─ CLAUDE.md
 ├─ specs/001-mvp/{spec,plan,tasks}.md
 ├─ supabase/
