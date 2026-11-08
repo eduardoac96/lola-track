@@ -55,3 +55,17 @@ export function sumCents(values: readonly number[]): number {
     return acc + v;
   }, 0);
 }
+
+/** Texto de input ('$4,500', '4500.5', '') → centavos o null si vacío/ inválido. */
+export function parsePesos(input: string): number | null {
+  const clean = input.replace(/[$\s,]/g, '');
+  if (!clean) return null;
+  if (!/^\d+(\.\d{0,2})?$/.test(clean)) return null;
+  return toCents(Number(clean));
+}
+
+/** Centavos → texto editable sin símbolo ('4500', '4500.50'). */
+export function centsToInput(cents: number | null | undefined): string {
+  if (cents == null) return '';
+  return cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
+}

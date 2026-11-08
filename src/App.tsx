@@ -1,23 +1,102 @@
+import { useCallback, useMemo, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
+import { AppContext, type AppCtx } from './app/context';
+import { useHousehold, type HouseholdData } from './data/household';
+import { useRealtime } from './data/realtime';
+import { useSession } from './data/session';
 import { hasSupabaseConfig } from './lib/supabase';
+import { LoginScreen } from './features/auth/LoginScreen';
+import { OnboardingScreen } from './features/auth/OnboardingScreen';
+import { NowScreen } from './features/now/NowScreen';
+import { ItemsScreen } from './features/items/ItemsScreen';
+import { AgendaScreen } from './features/agenda/AgendaScreen';
+import { BudgetScreen } from './features/budget/BudgetScreen';
+import { QuickAdd } from './features/items/QuickAdd';
+import { TabBar } from './ui/TabBar';
+import { Sheet } from './ui/Sheet';
+import { EmptyCard, Fab, PrimaryButton, Spinner, ToastProvider } from './ui/kit';
 
 export default function App() {
+  if (!hasSupabaseConfig) {
+    return (
+      <main className="mx-auto max-w-md p-6">
+        <EmptyCard>
+          Falta configurar Supabase: copia <code>.env.example</code> a <code>.env</code>.
+        </EmptyCard>
+      </main>
+    );
+  }
   return (
-    <main className="mx-auto flex min-h-full max-w-md flex-col gap-4 px-5 pt-[max(28px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))]">
-      <header className="flex flex-col gap-0.5">
-        <span className="text-[13px] font-semibold text-muted">Hogar</span>
-        <h1 className="m-0 text-3xl font-extrabold tracking-tight">Lola Track</h1>
-      </header>
+    <ToastProvider>
+      <BrowserRouter>
+        <Gate />
+      </BrowserRouter>
+    </ToastProvider>
+  );
+}
 
-      <section className="rounded-[var(--radius-hero)] bg-primary p-5 text-white">
-        <p className="m-0 text-[13px] font-semibold text-[#E4E0FF]">Scaffold listo</p>
-        <p className="m-0 mt-1 text-xl font-extrabold">Pendientes · Agenda · Presupuesto</p>
-      </section>
+function Gate() {
+  const session = useSession();
+  const userId = session?.user.id;
+  const household = useHousehold(userId);
 
-      {!hasSupabaseConfig && (
-        <p className="m-0 rounded-[var(--radius-card)] border border-line bg-card p-4 text-sm font-semibold text-muted">
-          Falta configurar Supabase: copia <code>.env.example</code> a <code>.env</code> y llena las variables.
-        </p>
-      )}
-    </main>
+  if (session === undefined) return <FullSpinner />;
+  if (session === null) return <LoginScreen />;
+  if (household.isLoading) return <FullSpinner />;
+  if (household.isError)
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 p-6">
+        <EmptyCard>No pudimos cargar tu hogar. Revisa tu conexión.</EmptyCard>
+        <PrimaryButton onClick={() => household.refetch()}>Reintentar</PrimaryButton>
+      </main>
+    );
+  if (!household.data) return <OnboardingScreen userId={session.user.id} email={session.user.email ?? ''} />;
+
+  return <Shell userId={session.user.id} email={session.user.email ?? ''} data={household.data} />;
+}
+
+function Shell({ userId, email, data }: { userId: string; email: string; data: HouseholdData }) {
+  const hid = data.household.id;
+  useRealtime(hid, userId);
+  const [quickAdd, setQuickAdd] = useState(false);
+  const location = useLocation();
+
+  const memberById = useCallback(
+    (id: string | null | undefined) => (id ? data.members.find((m) => m.user_id === id) : undefined),
+    [data.members],
+  );
+  const ctx = useMemo<AppCtx>(
+    () => ({ userId, email, hid, household: data.household, members: data.members, memberById }),
+    [userId, email, hid, data, memberById],
+  );
+  const showFab = location.pathname !== '/presupuesto';
+
+  return (
+    <AppContext.Provider value={ctx}>
+      <div className="mx-auto min-h-dvh max-w-lg px-5 pt-[max(28px,env(safe-area-inset-top))] pb-[calc(170px+env(safe-area-inset-bottom))]">
+        <Routes>
+          <Route path="/" element={<NowScreen />} />
+          <Route path="/pendientes" element={<ItemsScreen />} />
+          <Route path="/agenda" element={<AgendaScreen />} />
+          <Route path="/presupuesto" element={<BudgetScreen />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+      {showFab && <Fab label="Agregar pendiente" onClick={() => setQuickAdd(true)} />}
+      <Sheet open={quickAdd} onClose={() => setQuickAdd(false)} title="Nuevo pendiente">
+        <div className="pb-2">
+          <QuickAdd autoFocus onCreated={() => setQuickAdd(false)} />
+        </div>
+      </Sheet>
+      <TabBar />
+    </AppContext.Provider>
+  );
+}
+
+function FullSpinner() {
+  return (
+    <div className="flex min-h-dvh">
+      <Spinner />
+    </div>
   );
 }

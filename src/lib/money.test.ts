@@ -36,3 +36,19 @@ describe('money', () => {
     expect(sumCents([])).toBe(0);
   });
 });
+
+import { parsePesos, centsToInput } from './money';
+describe('parsePesos / centsToInput', () => {
+  it('parsea formatos de input', () => {
+    expect(parsePesos('')).toBeNull();
+    expect(parsePesos('$4,500')).toBe(450000);
+    expect(parsePesos('4500.5')).toBe(450050);
+    expect(parsePesos('abc')).toBeNull();
+    expect(parsePesos('1.234')).toBeNull();
+  });
+  it('round-trip', () => {
+    expect(centsToInput(450000)).toBe('4500');
+    expect(centsToInput(450050)).toBe('4500.50');
+    expect(centsToInput(null)).toBe('');
+  });
+});

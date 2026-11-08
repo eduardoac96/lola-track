@@ -9,24 +9,29 @@ Orden pensado para ROASTER/FIXER: cada tarea es un PR pequeño con su criterio v
 - [x] **T02** [P] Proyecto Supabase `lola-track` (`xkiumlisdkxwqlvuqneg`, us-west-2) con 3 migraciones aplicadas, advisors revisados y tipos en `src/lib/database.types.ts`.
   - [ ] **T02b** (manual, dashboard) Auth → Email: plantilla "Magic Link" con `{{ .Token }}` (código 6 dígitos), OTP expiry 600 s, Site URL = dominio de Cloudflare Pages.
 - [x] **T03** `lib/supabase.ts`, `lib/money.ts` (`toCents`, `fromCents`, `fmtMXN`) con tests → los tests cubren 0, negativos y miles.
-- [ ] **T04** Auth OTP (pedir correo → 6 dígitos) + onboarding (crear hogar / unirse con código) + invitar con `navigator.share` → dos cuentas terminan en el mismo hogar.
+- [x] **T04** Auth OTP (pedir correo → 6 dígitos) + onboarding (crear hogar / unirse con código) + invitar con `navigator.share` → dos cuentas terminan en el mismo hogar.
 - [x] **T05** Pruebas de RLS (local: `supabase/tests`; remoto: 15 casos en verde 2026-11-08) (SQL o Vitest con 3 usuarios: A y B en el hogar 1, C en el hogar 2) → C no lee ni escribe nada del hogar 1; B no puede unirse con un código ya usado o vencido.
-- [ ] **T06** UI shell: TabBar, Sheet, Fab, Avatar, Chip, iconos SVG → navega entre 4 rutas en un iPhone de 390 px.
-- [ ] **T07** `lib/quickAdd.ts` (ya incluido) + componente QuickAdd con vista previa de chips → los tests de `quickAdd.test.ts` pasan.
-- [ ] **T08** Pendientes: lista agrupada, filtros, completar/reabrir (sin presupuesto aún), editar en sheet, eliminar → criterios H3.
-- [ ] **T09** Realtime: `data/realtime.ts` suscribe por hogar y actualiza la cache → un cambio en el dispositivo A aparece en B en <2 s.
-- [ ] **T10** PWA: manifest (name "Lola Track", short_name "Lola", theme `#5B47E0`), iconos, apple-touch-icon, `display: standalone`, SW con precache → instalable desde Safari en iPhone.
-- [ ] **T11** Deploy en Cloudflare Pages + URL de Supabase en Auth redirect/site URL → los dos la usan desde el iPhone.
+- [x] **T06** UI shell: TabBar, Sheet, Fab, Avatar, Chip, iconos SVG → navega entre 4 rutas en un iPhone de 390 px.
+- [x] **T07** `lib/quickAdd.ts` (ya incluido) + componente QuickAdd con vista previa de chips → los tests de `quickAdd.test.ts` pasan.
+- [x] **T08** Pendientes: lista agrupada, filtros, completar/reabrir (sin presupuesto aún), editar en sheet, eliminar → criterios H3.
+- [x] **T09** Realtime: `data/realtime.ts` suscribe por hogar y actualiza la cache → un cambio en el dispositivo A aparece en B en <2 s.
+- [x] **T10** PWA: manifest (name "Lola Track", short_name "Lola", theme `#5B47E0`), iconos, apple-touch-icon, `display: standalone`, SW con precache → instalable desde Safari en iPhone.
+- [ ] **T11** (manual) Deploy en Cloudflare Pages → los dos la usan desde el iPhone.
+  - Cloudflare → Workers & Pages → Create → Pages → conectar `eduardoac96/lola-track`. Build: `npm run build`, output `dist`. Variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_VAPID_PUBLIC_KEY`.
+  - `public/_redirects` (SPA) y `public/_headers` (sw sin caché) ya incluidos.
+  - Supabase → Authentication → URL Configuration → Site URL = dominio de Pages.
 
 ## Fase 1 · Presupuesto, agenda y "Ahora" (~6 h)
 
-- [ ] **T12** Presupuesto: pills de bolsas, BalanceCard (view `budget_balances`), AmountSheet con teclado y chips, lista de movimientos, eliminar con deshacer → criterios H5.
-- [ ] **T13** CompleteSheet para compras → RPC `complete_item`; reabrir → `reopen_item` → criterios H4 (el saldo se mueve y regresa).
-- [ ] **T14** Agenda: WeekStrip, EventCard, EventSheet (crear/editar/eliminar, vínculo a pendiente) → criterios H6 sin push.
-- [ ] **T15** Push: `lib/push.ts` (suscribir/guardar en `push_subscriptions`), handler `push` y `notificationclick` en `sw.ts`, botón "Activar avisos" → llega un push de prueba a un iPhone con la PWA instalada.
-- [ ] **T16** Edge Function `send-reminders` + pg_cron cada 5 min (con `x-cron-secret`) → un evento a 61 min avisa una sola vez; si se edita la hora, vuelve a avisar.
-- [ ] **T17** Pantalla Ahora: anillo, bolsa principal, 3 urgentes, 2 próximos → criterios H7.
-- [ ] **T18** Fotos: `lib/image.ts` (resize a WebP ≤1280), subida a `photos/{hid}/{item}.webp`, miniatura con signed URL → una foto de 4 MB del iPhone queda por debajo de 300 KB.
+- [x] **T12** Presupuesto: pills de bolsas, BalanceCard (view `budget_balances`), AmountSheet con teclado y chips, lista de movimientos, eliminar con deshacer → criterios H5.
+- [x] **T13** CompleteSheet para compras → RPC `complete_item`; reabrir → `reopen_item` → criterios H4 (el saldo se mueve y regresa).
+- [x] **T14** Agenda: WeekStrip, EventCard, EventSheet (crear/editar/eliminar, vínculo a pendiente) → criterios H6 sin push.
+- [x] **T15** Push (código listo; falta **T15b** manual: llaves VAPID): `lib/push.ts` (suscribir/guardar en `push_subscriptions`), handler `push` y `notificationclick` en `sw.ts`, botón "Activar avisos" → llega un push de prueba a un iPhone con la PWA instalada.
+- [x] **T16** Edge Function `send-reminders` desplegada + pg_cron cada 5 min (secreto en Vault; probado: 200 con secreto, 403 sin él) → un evento a 61 min avisa una sola vez; si se edita la hora, vuelve a avisar.
+- [x] **T17** Pantalla Ahora: anillo, bolsa principal, 3 urgentes, 2 próximos → criterios H7.
+- [x] **T18** Fotos: `lib/image.ts` (resize a WebP ≤1280), subida a `photos/{hid}/{item}.webp`, miniatura con signed URL → una foto de 4 MB del iPhone queda por debajo de 300 KB.
+
+  - [ ] **T15b** (manual) `npx web-push generate-vapid-keys` → en Supabase → Edge Functions → Secrets: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT=mailto:<tu-correo>`; y la pública en `VITE_VAPID_PUBLIC_KEY` (Cloudflare + `.env`). Mientras no estén, la función responde `skipped` sin consumir avisos.
 
 ## Fase 2 · Pulido (backlog)
 
