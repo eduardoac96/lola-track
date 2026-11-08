@@ -21,7 +21,13 @@ export function ChecklistButton({ tone = 'primary' }: { tone?: 'primary' | 'ink'
       disabled={bulk.isPending}
       onClick={async () => {
         const created = await bulk.mutateAsync(
-          missing.map((m) => ({ title: m.title, type: m.type, priority: m.priority, area: m.area })),
+          missing.map((m, i) => ({
+            title: m.title,
+            type: m.type,
+            priority: m.priority,
+            area: m.area,
+            sort_order: -Date.now() + i,
+          })),
         );
         toast({ text: `Se agregaron ${created.length} pendientes sugeridos` });
       }}

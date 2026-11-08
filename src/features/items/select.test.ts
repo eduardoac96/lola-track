@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Item } from '../../data/items';
-import { areasOf, groupItems, itemMeta, pendingPurchasesCents, progressOf, topUrgent } from './select';
+import { areasOf, groupItems, itemMeta, pendingPurchasesCents, progressOf, sortOrderAt, topUrgent } from './select';
 
 const NOW = new Date('2026-11-08T12:00:00Z');
 let n = 0;
@@ -14,6 +14,7 @@ function item(p: Partial<Item>): Item {
     priority: 'pronto',
     area: null,
     price_estimated_cents: null,
+    sort_order: n * 1000,
     price_actual_cents: null,
     due_date: null,
     due_reminded_at: null,
@@ -56,7 +57,7 @@ describe('items/select', () => {
     expect(groups[0]?.pending).toBe(2);
   });
 
-  it('pendientes primero, hechos al final', () => {
+  it('pendientes primero (por orden manual), hechos al final', () => {
     const extra = item({ priority: 'pronto' });
     const { groups } = groupItems([monitor, extra], { type: 'todo', area: null, showAllDone: true, now: NOW });
     expect(groups[0]?.items.map((i) => i.id)).toEqual([extra.id, monitor.id]);
@@ -70,9 +71,16 @@ describe('items/select', () => {
     expect(shown.hiddenDone).toBe(0);
   });
 
-  it('filtra por tipo y por área sin distinguir mayúsculas', () => {
+  it('filtra por tipo (tareas incluye arreglos) y por área sin distinguir mayúsculas', () => {
     const compras = groupItems(all, { type: 'compra', area: null, showAllDone: true, now: NOW });
     expect(compras.groups.flatMap((g) => g.items)).toHaveLength(3);
+    const tareas = groupItems(all, { type: 'tarea', area: null, showAllDone: true, now: NOW });
+    expect(
+      tareas.groups
+        .flatMap((g) => g.items)
+        .map((i) => i.type)
+        .sort(),
+    ).toEqual(['arreglo', 'tarea']);
     const cuarto = groupItems(all, { type: 'todo', area: 'CUARTO NIÑOS', showAllDone: true, now: NOW });
     expect(
       cuarto.groups
@@ -99,5 +107,21 @@ describe('items/select', () => {
   it('meta muestra precio real cuando está hecho', () => {
     expect(itemMeta(cuna)).toBe('Compra · Cuarto niños · $4,500');
     expect(itemMeta(monitor)).toBe('Compra · $1,999');
+  });
+
+  it('respeta el orden manual (sort_order ascendente)', () => {
+    const a = item({ priority: 'urgente', sort_order: 30 });
+    const b = item({ priority: 'urgente', sort_order: 10 });
+    const c = item({ priority: 'urgente', sort_order: 20 });
+    const { groups } = groupItems([a, b, c], { type: 'todo', area: null, showAllDone: true, now: NOW });
+    expect(groups[0]?.items.map((i) => i.id)).toEqual([b.id, c.id, a.id]);
+  });
+
+  it('sortOrderAt: punto medio y extremos', () => {
+    const list = [{ sort_order: 10 }, { sort_order: 20 }, { sort_order: 30 }];
+    expect(sortOrderAt(list, 0)).toBe(-990);
+    expect(sortOrderAt(list, 1)).toBe(15);
+    expect(sortOrderAt(list, 3)).toBe(1030);
+    expect(sortOrderAt([], 0)).toBe(0);
   });
 });

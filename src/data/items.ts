@@ -51,6 +51,7 @@ export function useCreateItem(hid: string, userId: string) {
         photo_path: null,
         price_actual_cents: null,
         price_estimated_cents: null,
+        sort_order: -Date.now(),
         priority: 'pronto',
         type: 'tarea',
         created_at: now,
@@ -85,6 +86,10 @@ export function useUpdateItem(hid: string) {
   });
 }
 
+/** Fotos de pendientes borrados: se eliminan del Storage cuando ya no se puede deshacer. */
+const pendingPhotoRemovals = new Map<string, number>();
+export const UNDO_MS = 6000;
+
 export function useDeleteItem(hid: string) {
   const qc = useQueryClient();
   const key = keys.items(hid);
@@ -92,7 +97,16 @@ export function useDeleteItem(hid: string) {
     mutationFn: async (item: Item) => {
       const { error } = await supabase().from('items').delete().eq('id', item.id);
       if (error) throw error;
-      if (item.photo_path) await supabase().storage.from('photos').remove([item.photo_path]);
+      const path = item.photo_path;
+      if (path) {
+        pendingPhotoRemovals.set(
+          item.id,
+          window.setTimeout(() => {
+            pendingPhotoRemovals.delete(item.id);
+            void supabase().storage.from('photos').remove([path]);
+          }, UNDO_MS + 1000),
+        );
+      }
     },
     onMutate: async (item) => {
       const snap = await snapshot<Item[]>(qc, key);
@@ -104,6 +118,29 @@ export function useDeleteItem(hid: string) {
       qc.invalidateQueries({ queryKey: keys.balances(hid) });
       qc.invalidateQueries({ queryKey: keys.movements(hid) });
     },
+  });
+}
+
+/** Deshacer: reinserta la fila tal cual (mismo id, fechas, foto y vínculo a presupuesto). */
+export function useRestoreItem(hid: string) {
+  const qc = useQueryClient();
+  const key = keys.items(hid);
+  return useMutation({
+    mutationFn: async (item: Item) => {
+      const timer = pendingPhotoRemovals.get(item.id);
+      if (timer) {
+        window.clearTimeout(timer);
+        pendingPhotoRemovals.delete(item.id);
+      }
+      const { data, error } = await supabase().from('items').insert(item).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async (item) => {
+      upsertInList(qc, key, item);
+    },
+    onSuccess: (row) => upsertInList(qc, key, row),
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.balances(hid) }),
   });
 }
 

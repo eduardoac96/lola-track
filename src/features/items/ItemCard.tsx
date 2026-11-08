@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react';
 import type { Item } from '../../data/items';
+import { SwipeRow } from '../../ui/SwipeRow';
 import { usePhotoUrl } from '../../data/photos';
 import { Icon } from '../../ui/Icon';
 import { TYPES, isDone, itemMeta } from './select';
@@ -20,15 +22,30 @@ export function ItemThumb({ item, size = 52 }: { item: Item; size?: number }) {
   );
 }
 
-export function ItemCard({ item, onToggle, onOpen }: { item: Item; onToggle: () => void; onOpen: () => void }) {
+export function ItemCard({
+  item,
+  onToggle,
+  onOpen,
+  onDelete,
+  handle,
+}: {
+  item: Item;
+  onToggle: () => void;
+  onOpen: () => void;
+  /** Si viene, la tarjeta se puede deslizar a la izquierda para eliminar. */
+  onDelete?: () => void;
+  /** Asa de arrastre para reordenar (opcional). */
+  handle?: ReactNode;
+}) {
   const done = isDone(item);
-  return (
-    <div
-      className={`flex items-center gap-3 rounded-[var(--radius-card)] border border-line bg-card py-2.5 pr-2.5 pl-3 transition-opacity ${
-        done ? 'opacity-55' : ''
-      }`}
-    >
-      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+  const card = (
+    <div className="flex items-center gap-2 rounded-[var(--radius-card)] border border-line bg-card py-2.5 pr-2.5 pl-3">
+      {handle}
+      <button
+        type="button"
+        onClick={onOpen}
+        className={`flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity ${done ? 'opacity-55' : ''}`}
+      >
         <ItemThumb item={item} />
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className={`truncate text-[15px] font-bold ${done ? 'line-through' : ''}`}>{item.title}</span>
@@ -51,5 +68,11 @@ export function ItemCard({ item, onToggle, onOpen }: { item: Item; onToggle: () 
         )}
       </button>
     </div>
+  );
+  if (!onDelete) return card;
+  return (
+    <SwipeRow onDelete={onDelete} label={item.title} className="rounded-[var(--radius-card)]">
+      {card}
+    </SwipeRow>
   );
 }

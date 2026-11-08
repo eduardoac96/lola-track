@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../../app/context';
-import { useItems, type Item } from '../../data/items';
+import { useItems, useUpdateItem, type Item } from '../../data/items';
 import { fmtMXN } from '../../lib/money';
 import { EmptyCard, Segmented, SectionTitle, Spinner } from '../../ui/kit';
-import { ItemCard } from './ItemCard';
+import { SortableGroup } from './SortableGroup';
+import { useDeleteWithUndo } from './useDeleteWithUndo';
 import { ItemSheet } from './ItemSheet';
 import { QuickAdd } from './QuickAdd';
 import { ChecklistButton } from './ChecklistButton';
@@ -14,6 +15,8 @@ export function ItemsScreen() {
   const { hid } = useApp();
   const items = useItems(hid);
   const { toggle, sheet } = useItemToggle();
+  const update = useUpdateItem(hid);
+  const removeItem = useDeleteWithUndo();
   const [type, setType] = useState<TypeFilter>('todo');
   const [area, setArea] = useState<string | null>(null);
   const [showAllDone, setShowAllDone] = useState(false);
@@ -48,7 +51,6 @@ export function ItemsScreen() {
           options={[
             { value: 'todo', label: 'Todo' },
             { value: 'compra', label: 'Compras' },
-            { value: 'arreglo', label: 'Arreglos' },
             { value: 'tarea', label: 'Tareas' },
           ]}
         />
@@ -100,9 +102,13 @@ export function ItemsScreen() {
             <SectionTitle dot={g.dot}>
               {g.label} <span className="text-[13px] font-bold text-muted">{g.pending}</span>
             </SectionTitle>
-            {g.items.map((it) => (
-              <ItemCard key={it.id} item={it} onToggle={() => toggle(it)} onOpen={() => setOpenId(it.id)} />
-            ))}
+            <SortableGroup
+              items={g.items}
+              onToggle={toggle}
+              onOpen={(it) => setOpenId(it.id)}
+              onDelete={removeItem}
+              onReorder={(id, sort_order) => update.mutate({ id, patch: { sort_order } })}
+            />
           </section>
         ))}
 

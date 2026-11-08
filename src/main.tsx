@@ -4,6 +4,9 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { createQueryClient } from './lib/queryClient';
 import App from './App';
 import './index.css';
+import { applyTheme, getThemePref } from './lib/theme';
+
+applyTheme(getThemePref());
 import { registerSW } from 'virtual:pwa-register';
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) registerSW({ immediate: true });

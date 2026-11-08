@@ -177,7 +177,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-[104px] z-[60] md:bottom-8 md:pl-24 flex justify-center px-4"
+        className="pointer-events-none fixed inset-x-0 top-[max(12px,env(safe-area-inset-top))] z-[60] flex justify-center px-4 md:pl-24"
       >
         {msg && (
           <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl bg-hero py-2 pr-2 pl-4 text-[14px] font-semibold text-white shadow-xl">

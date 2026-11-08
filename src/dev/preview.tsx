@@ -44,6 +44,7 @@ const it = (p: Partial<Item>): Item => ({
   priority: 'pronto',
   area: null,
   price_estimated_cents: null,
+  sort_order: -Date.now() + seq * 1000,
   price_actual_cents: null,
   due_date: null,
   due_reminded_at: null,

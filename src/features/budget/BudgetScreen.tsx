@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../app/context';
 import {
   getLastBudget,
@@ -8,12 +8,15 @@ import {
   useCreateBudget,
   useDeleteMovement,
   useMovements,
+  type Balance,
   type Movement,
 } from '../../data/budgets';
 import { newId } from '../../data/cache';
 import { fmtMXN, parsePesos } from '../../lib/money';
 import { fmtRelative } from '../../lib/dates';
 import { Sheet } from '../../ui/Sheet';
+import { SwipeRow } from '../../ui/SwipeRow';
+import { BudgetEditSheet, MovementSheet } from './BudgetSheets';
 import { Icon } from '../../ui/Icon';
 import { Avatar, EmptyCard, Field, PrimaryButton, Spinner, haptic, inputCls, useToast } from '../../ui/kit';
 import { AmountSheet, type AmountMode } from './AmountSheet';
@@ -28,6 +31,8 @@ export function BudgetScreen() {
   const [selected, setSelected] = useState<string | null>(getLastBudget());
   const [mode, setMode] = useState<AmountMode | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Balance | null>(null);
+  const [editingMov, setEditingMov] = useState<Movement | null>(null);
 
   const list = balances.data ?? [];
   const current = list.find((b) => b.budget_id === selected) ?? list[0];
@@ -96,11 +101,24 @@ export function BudgetScreen() {
       </header>
 
       {balances.isLoading && <Spinner />}
+      {balances.isSuccess && list.length === 0 && (
+        <EmptyCard>Sin bolsas. Crea una con “+ Nueva bolsa” para llevar el presupuesto.</EmptyCard>
+      )}
       {current && (
         <div className="contents md:grid md:grid-cols-2 md:items-start md:gap-x-10">
           <div className="contents md:flex md:flex-col md:gap-4">
             <section className="flex flex-col gap-3 rounded-[var(--radius-hero)] bg-hero px-5 py-5 text-white">
-              <span className="text-[13px] font-semibold text-on-hero">Disponible en {current.name}</span>
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-[13px] font-semibold text-on-hero">Disponible en {current.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setEditingBudget(current)}
+                  aria-label={`Editar o eliminar la bolsa ${current.name}`}
+                  className="-my-2 -mr-2 flex size-11 items-center justify-center rounded-full text-on-hero"
+                >
+                  <Icon name="pencil" size={18} />
+                </button>
+              </span>
               <span
                 className={`text-[44px] leading-none font-extrabold tracking-tight ${negative ? 'text-[#FF8A8F]' : ''}`}
               >
@@ -153,13 +171,14 @@ export function BudgetScreen() {
                     last={i === movs.length - 1}
                     who={memberById(m.created_by)}
                     onDelete={() => remove(m)}
+                    onOpen={() => setEditingMov(m)}
                   />
                 ))}
               </ul>
             )}
             {movs.length > 0 && (
               <p className="m-0 text-center text-[12px] font-medium text-muted">
-                Desliza a la izquierda para eliminar.
+                Toca un movimiento para editarlo · desliza a la izquierda para eliminar.
               </p>
             )}
           </section>
@@ -182,6 +201,8 @@ export function BudgetScreen() {
           setMode(null);
         }}
       />
+      <BudgetEditSheet budget={editingBudget} onClose={() => setEditingBudget(null)} />
+      <MovementSheet movement={editingMov} onClose={() => setEditingMov(null)} onDelete={remove} />
       <NewBudgetSheet
         open={creating}
         onClose={() => setCreating(false)}
@@ -199,67 +220,29 @@ function MovementRow({
   last,
   who,
   onDelete,
+  onOpen,
 }: {
   m: Movement;
   last: boolean;
   who: ReturnType<ReturnType<typeof useApp>['memberById']>;
   onDelete: () => void;
+  onOpen: () => void;
 }) {
-  const [dx, setDx] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const start = useRef<{ x: number; y: number } | null>(null);
-  const horizontal = useRef(false);
   const neg = m.amount_cents < 0;
-
   return (
-    <li className="relative" onKeyDown={(e) => (e.key === 'Delete' || e.key === 'Backspace') && onDelete()}>
-      <div className="absolute inset-0 flex items-center justify-end bg-danger pr-5 text-white" aria-hidden="true">
-        <Icon name="trash" size={20} />
-      </div>
-      <div
-        tabIndex={0}
-        aria-label={`${m.concept ?? 'Movimiento'} ${fmtMXN(m.amount_cents, 'always')}. Suprimir para eliminar.`}
-        className={`relative flex touch-pan-y items-center gap-3 bg-card px-3.5 py-3 ${last ? '' : 'border-b border-line-soft'}`}
-        style={{ transform: `translateX(${dx}px)`, transition: dragging ? 'none' : 'transform .2s' }}
-        onPointerDown={(e) => {
-          start.current = { x: e.clientX, y: e.clientY };
-          horizontal.current = false;
-        }}
-        onPointerMove={(e) => {
-          if (!start.current) return;
-          const ddx = e.clientX - start.current.x;
-          const ddy = e.clientY - start.current.y;
-          if (!horizontal.current && Math.abs(ddx) > 8 && Math.abs(ddx) > Math.abs(ddy)) {
-            horizontal.current = true;
-            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          }
-          if (horizontal.current) {
-            setDragging(true);
-            setDx(Math.min(0, ddx));
-          }
-        }}
-        onPointerUp={() => {
-          const go = dx < -90;
-          start.current = null;
-          setDragging(false);
-          setDx(0);
-          if (go) onDelete();
-        }}
-        onPointerCancel={() => {
-          start.current = null;
-          setDragging(false);
-          setDx(0);
-        }}
-      >
-        <Avatar member={who} />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate text-[15px] font-bold">{m.concept ?? (neg ? 'Gasto' : 'Abono')}</span>
-          <span className="text-[12px] font-medium text-muted">{fmtRelative(new Date(m.created_at))}</span>
-        </span>
-        <span className={`text-[16px] font-extrabold ${neg ? 'text-gasto' : 'text-abono'}`}>
-          {fmtMXN(m.amount_cents, 'always')}
-        </span>
-      </div>
+    <li className={last ? '' : 'border-b border-line-soft'}>
+      <SwipeRow onDelete={onDelete} label={`${m.concept ?? 'Movimiento'} ${fmtMXN(m.amount_cents, 'always')}`}>
+        <button type="button" onClick={onOpen} className="flex w-full items-center gap-3 bg-card px-3.5 py-3 text-left">
+          <Avatar member={who} />
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate text-[15px] font-bold">{m.concept ?? (neg ? 'Gasto' : 'Abono')}</span>
+            <span className="text-[12px] font-medium text-muted">{fmtRelative(new Date(m.created_at))}</span>
+          </span>
+          <span className={`text-[16px] font-extrabold ${neg ? 'text-gasto' : 'text-abono'}`}>
+            {fmtMXN(m.amount_cents, 'always')}
+          </span>
+        </button>
+      </SwipeRow>
     </li>
   );
 }

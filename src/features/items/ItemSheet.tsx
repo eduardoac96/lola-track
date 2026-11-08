@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react';
 import { useApp } from '../../app/context';
-import { useDeleteItem, useUpdateItem, type Item, type ItemPriority, type ItemType } from '../../data/items';
+import { useUpdateItem, type Item, type ItemPriority, type ItemType } from '../../data/items';
 import { removePhoto, uploadItemPhoto, usePhotoUrl } from '../../data/photos';
 import { centsToInput, parsePesos } from '../../lib/money';
 import { Sheet } from '../../ui/Sheet';
 import { Icon } from '../../ui/Icon';
-import { Field, GhostButton, PrimaryButton, Segmented, inputCls, useToast } from '../../ui/kit';
+import { Field, GhostButton, PrimaryButton, Segmented, inputCls } from '../../ui/kit';
 import { PRIORITIES, TYPES, isDone } from './select';
+import { useDeleteWithUndo } from './useDeleteWithUndo';
 
 interface Draft {
   title: string;
@@ -39,8 +40,7 @@ export function ItemSheet({ item, onClose }: { item: Item | null; onClose: () =>
 function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
   const { hid, memberById } = useApp();
   const update = useUpdateItem(hid);
-  const del = useDeleteItem(hid);
-  const toast = useToast();
+  const removeWithUndo = useDeleteWithUndo();
   const [d, setD] = useState<Draft>(() => toDraft(item));
   const [more, setMore] = useState(Boolean(item.link_url || item.notes || item.due_date));
   const [uploading, setUploading] = useState(false);
@@ -75,8 +75,7 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
   };
 
   const remove = () => {
-    del.mutate(item);
-    toast({ text: `"${item.title}" eliminado` });
+    removeWithUndo(item);
     onClose();
   };
 

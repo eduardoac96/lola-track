@@ -5,7 +5,8 @@ import { MIN_PASSWORD, changePassword, signOut } from '../../data/session';
 import { disablePush, enablePush, getPushState, type PushState } from '../../lib/push';
 import { Sheet } from '../../ui/Sheet';
 import { Icon } from '../../ui/Icon';
-import { Avatar, Field, GhostButton, PrimaryButton, inputCls, useToast } from '../../ui/kit';
+import { Avatar, Field, GhostButton, PrimaryButton, Segmented, inputCls, useToast } from '../../ui/kit';
+import { useTheme } from '../../lib/useTheme';
 import { ChecklistButton } from '../items/ChecklistButton';
 
 const PUSH_COPY: Record<PushState, string> = {
@@ -20,6 +21,7 @@ const PUSH_COPY: Record<PushState, string> = {
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { hid, household, members, email, userId } = useApp();
   const invite = useCreateInvite();
+  const theme = useTheme();
   const [push, setPush] = useState<PushState | null>(null);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState<string | null>(null);
@@ -102,6 +104,21 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             </PrimaryButton>
           )}
           {pushError && <p className="m-0 text-[13px] font-semibold text-gasto">{pushError}</p>}
+        </section>
+
+        <section className="flex flex-col gap-3 rounded-[var(--radius-card)] bg-bg p-4">
+          <h3 className="m-0 text-[15px] font-extrabold">Apariencia</h3>
+          <Segmented
+            label="Tema"
+            size="sm"
+            value={theme.pref}
+            onChange={theme.setPref}
+            options={[
+              { value: 'auto', label: 'Automático' },
+              { value: 'light', label: 'Día' },
+              { value: 'dark', label: 'Noche' },
+            ]}
+          />
         </section>
 
         <section className="flex flex-col gap-3 rounded-[var(--radius-card)] bg-bg p-4">

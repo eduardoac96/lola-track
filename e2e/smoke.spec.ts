@@ -134,3 +134,102 @@ test('login: crear cuenta exige 8 caracteres y avisa si falta desactivar Confirm
   await submit.click();
   await expect(page.getByRole('alert')).toContainText('Confirm email');
 });
+
+/** Arrastre horizontal con el mouse (Playwright no simula swipe táctil en Chromium de escritorio). */
+async function swipeLeft(page: Page, locator: ReturnType<Page['locator']>) {
+  await locator.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('sin caja');
+  const y = box.y + box.height / 2;
+  const x0 = box.x + box.width * 0.55; // lejos del botón + flotante
+  await page.mouse.move(x0, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(x0 - i * 16, y);
+  await page.mouse.up();
+}
+
+test.describe('mejoras v1.1', () => {
+  test.use({ hasTouch: false, isMobile: false });
+
+  test('deslizar elimina un pendiente y Deshacer lo regresa', async ({ page }) => {
+    await page.route('**/rest/v1/items*', (r) =>
+      r.request().method() === 'DELETE' ? r.fulfill({ status: 204, body: '' }) : r.fallback(),
+    );
+    await page.goto('/preview.html?screen=items');
+    const card = page.getByRole('button', { name: 'Marcar "Cambiador" como hecho' });
+    await expect(card).toBeVisible();
+    await swipeLeft(page, page.getByLabel(/^Cambiador\. Desliza/));
+    await expect(card).toHaveCount(0);
+    await page.getByRole('button', { name: 'Deshacer' }).click();
+    await expect(card).toBeVisible();
+    await expect(page.getByText('No se guardó')).toHaveCount(0);
+  });
+
+  test('ya no hay pestaña de Arreglos y Tareas incluye arreglos', async ({ page }) => {
+    await page.goto('/preview.html?screen=items');
+    const filtros = page.getByRole('radiogroup', { name: 'Filtrar por tipo' });
+    await expect(filtros.getByRole('radio')).toHaveText(['Todo', 'Compras', 'Tareas']);
+    await filtros.getByRole('radio', { name: 'Tareas' }).click();
+    await expect(page.getByText('Asegurar muebles a la pared')).toBeVisible(); // es un arreglo
+    await expect(page.getByText('Lámpara de noche')).toHaveCount(0); // es compra
+  });
+
+  test('reordenar con teclado mueve el pendiente', async ({ page }) => {
+    await page.route('**/rest/v1/items*', (r) =>
+      r.request().method() === 'PATCH'
+        ? r.fulfill({
+            json: {
+              id: new URL(r.request().url()).searchParams.get('id')?.replace('eq.', ''),
+              ...(r.request().postDataJSON() as object),
+            },
+          })
+        : r.fallback(),
+    );
+    await page.goto('/preview.html?screen=items');
+    const urgentes = page.locator('section').filter({ has: page.getByRole('heading', { name: /Urgente/ }) });
+    const titles = () => urgentes.locator('.truncate.text-\\[15px\\]').allInnerTexts();
+    const before = await titles();
+    const handle = page.getByRole('button', { name: `Reordenar "${before[0]}"` });
+    await handle.focus();
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(150);
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(250);
+    await page.keyboard.press('Space');
+    await expect.poll(titles).toEqual([before[1], before[0], ...before.slice(2)]);
+  });
+
+  test('toggle día/noche cambia el tema y se recuerda', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/preview.html?screen=now');
+    await page.getByRole('button', { name: 'Cambiar a modo noche' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.getByRole('button', { name: 'Cambiar a modo día' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  });
+
+  test('editar movimiento y eliminar bolsa con confirmación', async ({ page }) => {
+    await page.route('**/rest/v1/budget_movements*', (r) =>
+      r.request().method() === 'PATCH'
+        ? r.fulfill({ json: { ...(r.request().postDataJSON() as object), id: 'm4', budget_id: 'b-bebe' } })
+        : r.fallback(),
+    );
+    await page.route('**/rest/v1/budgets*', (r) =>
+      r.request().method() === 'DELETE' ? r.fulfill({ status: 204, body: '' }) : r.fallback(),
+    );
+    await page.goto('/preview.html?screen=budget');
+    await page.getByRole('button', { name: /Pintura cuarto/ }).click();
+    const monto = page.getByLabel('Monto', { exact: true });
+    await monto.fill('2000');
+    await page.getByRole('button', { name: 'Guardar −$2,000' }).click();
+    await expect(page.getByText('$38,300')).toBeVisible(); // $38,450 − $150 de diferencia
+    await page.getByRole('button', { name: 'Editar o eliminar la bolsa Bebé' }).click();
+    await page.getByRole('button', { name: 'Eliminar bolsa' }).click();
+    await expect(page.getByText(/No se puede deshacer/)).toBeVisible();
+    await page.getByRole('button', { name: 'Eliminar definitivamente' }).click();
+    await expect(page.getByText('Disponible en Arreglos casa')).toBeVisible();
+    await expect(page.getByText('No se guardó')).toHaveCount(0);
+  });
+});

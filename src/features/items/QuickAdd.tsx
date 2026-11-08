@@ -24,6 +24,7 @@ export function QuickAdd({ onCreated, autoFocus }: { onCreated?: () => void; aut
       priority: parsed.priority,
       area: parsed.area,
       price_estimated_cents: parsed.priceCents,
+      sort_order: -Date.now(),
     });
     setText('');
     input.current?.focus();
@@ -87,8 +88,7 @@ export function QuickAdd({ onCreated, autoFocus }: { onCreated?: () => void; aut
         </div>
       ) : (
         <p className="m-0 px-1 text-[12px] font-medium text-muted">
-          <b>$precio</b> la vuelve compra · <b>!urgente</b> <b>!pronto</b> <b>!algun</b> · <b>@área</b> ·{' '}
-          <b>#arreglo</b>
+          <b>$precio</b> la vuelve compra · <b>!urgente</b> <b>!pronto</b> <b>!algun</b> · <b>@área</b>
         </p>
       )}
     </div>

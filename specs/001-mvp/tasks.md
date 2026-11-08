@@ -40,3 +40,11 @@ Orden pensado para ROASTER/FIXER: cada tarea es un PR pequeño con su criterio v
 - [x] **T21** Plantilla "Checklist llegada" (seed opcional de ~25 pendientes típicos, editable).
 - [x] **T22** Recordatorio de pendientes con `due_date` (desde 8:00 Monterrey, un aviso por hogar; se reprograma si cambia la fecha). Probado contra la función desplegada.
 - [x] **T23** Playwright smoke en viewport iPhone 14: login con OTP mockeado → crear → completar compra → saldo.
+
+## v1.1 · Mejoras de uso (8 nov 2026)
+
+- [x] **T24** Toggle día/noche: botón sol/luna en Ahora + Automático/Día/Noche en Ajustes (`data-theme`, se recuerda por dispositivo, sin parpadeo al cargar).
+- [x] **T25** Deslizar a la izquierda para eliminar pendientes (Ahora y Pendientes) con "Deshacer" que restaura la fila completa (foto incluida: su borrado del Storage se difiere). Toast movido arriba para no tapar botones.
+- [x] **T26** Filtro sin pestaña "Arreglos": Todo · Compras · Tareas (Tareas incluye arreglos).
+- [x] **T27** Reordenar a mano: asa ⋮⋮ por tarjeta, arrastre dentro de cada prioridad (teclado incluido). Columna `items.sort_order` (migración `20261108180000`).
+- [x] **T28** Presupuesto: renombrar y eliminar bolsas (confirmación con conteo de movimientos), tocar un movimiento para editar monto/tipo/concepto; swipe compartido (`ui/SwipeRow`). Corrección: los totales gastado/aportado se ajustan bien al borrar o editar.

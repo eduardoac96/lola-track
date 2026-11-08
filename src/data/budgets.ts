@@ -57,19 +57,25 @@ export function useMovements(hid: string) {
   });
 }
 
-/** Ajusta el saldo de una bolsa en cache (optimistic). */
-function bumpBalance(qc: ReturnType<typeof useQueryClient>, hid: string, budgetId: string, delta: number) {
+/** Aplica (sign=1) o revierte (sign=-1) un movimiento en el saldo y totales de su bolsa (optimistic). */
+export function applyMovement(b: Balance, amountCents: number, sign: 1 | -1): Balance {
+  return {
+    ...b,
+    available_cents: b.available_cents + sign * amountCents,
+    added_cents: b.added_cents + (amountCents > 0 ? sign * amountCents : 0),
+    spent_cents: b.spent_cents + (amountCents < 0 ? sign * -amountCents : 0),
+  };
+}
+
+function bumpBalance(
+  qc: ReturnType<typeof useQueryClient>,
+  hid: string,
+  budgetId: string,
+  amountCents: number,
+  sign: 1 | -1,
+) {
   qc.setQueryData<Balance[]>(keys.balances(hid), (prev) =>
-    prev?.map((b) =>
-      b.budget_id !== budgetId
-        ? b
-        : {
-            ...b,
-            available_cents: b.available_cents + delta,
-            added_cents: b.added_cents + (delta > 0 ? delta : 0),
-            spent_cents: b.spent_cents + (delta < 0 ? -delta : 0),
-          },
-    ),
+    prev?.map((b) => (b.budget_id === budgetId ? applyMovement(b, amountCents, sign) : b)),
   );
 }
 
@@ -102,7 +108,7 @@ export function useAddMovement(hid: string, userId: string) {
         household_id: hid,
         ...m,
       });
-      bumpBalance(qc, hid, m.budget_id, m.amount_cents);
+      bumpBalance(qc, hid, m.budget_id, m.amount_cents, 1);
       return [a, b] as const;
     },
     onError: (_e, _v, snaps) => snaps?.forEach((s) => restore(qc, s)),
@@ -122,7 +128,7 @@ export function useDeleteMovement(hid: string) {
       const a = await snapshot<Movement[]>(qc, keys.movements(hid));
       const b = await snapshot<Balance[]>(qc, keys.balances(hid));
       removeFromList(qc, keys.movements(hid), m.id);
-      bumpBalance(qc, hid, m.budget_id, -m.amount_cents);
+      bumpBalance(qc, hid, m.budget_id, m.amount_cents, -1);
       return [a, b] as const;
     },
     onError: (_e, _v, snaps) => snaps?.forEach((s) => restore(qc, s)),
@@ -166,4 +172,78 @@ export function setLastBudget(id: string): void {
   } catch {
     /* modo privado */
   }
+}
+
+export function useRenameBudget(hid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { id: string; name: string }) => {
+      const { error } = await supabase().from('budgets').update({ name: v.name }).eq('id', v.id);
+      if (error) throw error;
+    },
+    onMutate: async (v) => {
+      const snap = await snapshot<Balance[]>(qc, keys.balances(hid));
+      qc.setQueryData<Balance[]>(keys.balances(hid), (prev) =>
+        prev?.map((b) => (b.budget_id === v.id ? { ...b, name: v.name } : b)),
+      );
+      return snap;
+    },
+    onError: (_e, _v, snap) => restore(qc, snap),
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.balances(hid) }),
+  });
+}
+
+/** Borra la bolsa y (en cascada) sus movimientos. Los pendientes vinculados quedan sin vínculo. */
+export function useDeleteBudget(hid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase().from('budgets').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      const a = await snapshot<Balance[]>(qc, keys.balances(hid));
+      const b = await snapshot<Movement[]>(qc, keys.movements(hid));
+      qc.setQueryData<Balance[]>(keys.balances(hid), (prev) => prev?.filter((x) => x.budget_id !== id));
+      qc.setQueryData<Movement[]>(keys.movements(hid), (prev) => prev?.filter((m) => m.budget_id !== id));
+      return [a, b] as const;
+    },
+    onError: (_e, _v, snaps) => snaps?.forEach((s) => restore(qc, s)),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: keys.balances(hid) });
+      qc.invalidateQueries({ queryKey: keys.movements(hid) });
+      qc.invalidateQueries({ queryKey: keys.items(hid) });
+    },
+  });
+}
+
+export function useUpdateMovement(hid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { id: string; amount_cents: number; concept: string | null }) => {
+      const { data, error } = await supabase()
+        .from('budget_movements')
+        .update({ amount_cents: v.amount_cents, concept: v.concept })
+        .eq('id', v.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async (v) => {
+      const a = await snapshot<Movement[]>(qc, keys.movements(hid));
+      const b = await snapshot<Balance[]>(qc, keys.balances(hid));
+      const old = a.prev?.find((m) => m.id === v.id);
+      upsertInList(qc, keys.movements(hid), v as Movement);
+      if (old) {
+        // revertir el monto anterior y aplicar el nuevo (saldo y totales correctos aunque cambie de signo)
+        bumpBalance(qc, hid, old.budget_id, old.amount_cents, -1);
+        bumpBalance(qc, hid, old.budget_id, v.amount_cents, 1);
+      }
+      return [a, b] as const;
+    },
+    onError: (_e, _v, snaps) => snaps?.forEach((s) => restore(qc, s)),
+    onSuccess: (row) => upsertInList(qc, keys.movements(hid), row),
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.balances(hid) }),
+  });
 }

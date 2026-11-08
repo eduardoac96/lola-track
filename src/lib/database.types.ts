@@ -272,6 +272,7 @@ export type Database = {
           price_actual_cents: number | null;
           price_estimated_cents: number | null;
           priority: Database['public']['Enums']['item_priority'];
+          sort_order: number;
           title: string;
           type: Database['public']['Enums']['item_type'];
           updated_at: string;
@@ -293,6 +294,7 @@ export type Database = {
           price_actual_cents?: number | null;
           price_estimated_cents?: number | null;
           priority?: Database['public']['Enums']['item_priority'];
+          sort_order?: number;
           title: string;
           type?: Database['public']['Enums']['item_type'];
           updated_at?: string;
@@ -314,6 +316,7 @@ export type Database = {
           price_actual_cents?: number | null;
           price_estimated_cents?: number | null;
           priority?: Database['public']['Enums']['item_priority'];
+          sort_order?: number;
           title?: string;
           type?: Database['public']['Enums']['item_type'];
           updated_at?: string;

@@ -7,11 +7,13 @@ import { useEvents } from '../../data/events';
 import { fmtMXN } from '../../lib/money';
 import { fmtLongDate } from '../../lib/dates';
 import { Icon } from '../../ui/Icon';
+import { useTheme } from '../../lib/useTheme';
 import { Avatar, EmptyCard, SectionTitle } from '../../ui/kit';
 import { ItemCard } from '../items/ItemCard';
 import { ItemSheet } from '../items/ItemSheet';
 import { progressOf, topUrgent } from '../items/select';
 import { useItemToggle } from '../items/useItemToggle';
+import { useDeleteWithUndo } from '../items/useDeleteWithUndo';
 import { EventRow } from '../agenda/EventCard';
 import { EventSheet, type EventTarget } from '../agenda/EventSheet';
 import { upcoming } from '../agenda/select';
@@ -29,6 +31,8 @@ export function NowScreen() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [eventTarget, setEventTarget] = useState<EventTarget>(null);
   const [settings, setSettings] = useState(false);
+  const theme = useTheme();
+  const removeItem = useDeleteWithUndo();
 
   const all = useMemo(() => items.data ?? [], [items.data]);
   const prog = progressOf(all);
@@ -44,23 +48,33 @@ export function NowScreen() {
           <span className="text-[13px] font-semibold text-muted">{fmtLongDate(new Date())}</span>
           <h1 className="m-0 text-[30px] font-extrabold tracking-tight">Nuestra casa</h1>
         </div>
-        <button
-          type="button"
-          onClick={() => setSettings(true)}
-          aria-label="Hogar y ajustes"
-          className="flex min-h-11 items-center"
-        >
-          {members.map((m, i) => (
-            <span key={m.user_id} style={{ marginLeft: i ? -12 : 0 }}>
-              <Avatar member={m} size={38} ring />
-            </span>
-          ))}
-          {members.length < 2 && (
-            <span className="-ml-3 flex size-[38px] items-center justify-center rounded-full border-2 border-dashed border-dashed bg-card text-primary-hover">
-              <Icon name="plus" size={16} stroke={2.6} />
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={theme.toggle}
+            aria-label={theme.current === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche'}
+            className="flex size-11 items-center justify-center rounded-full text-muted"
+          >
+            <Icon name={theme.current === 'dark' ? 'sun' : 'moon'} size={22} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setSettings(true)}
+            aria-label="Hogar y ajustes"
+            className="flex min-h-11 items-center"
+          >
+            {members.map((m, i) => (
+              <span key={m.user_id} style={{ marginLeft: i ? -12 : 0 }}>
+                <Avatar member={m} size={38} ring />
+              </span>
+            ))}
+            {members.length < 2 && (
+              <span className="-ml-3 flex size-[38px] items-center justify-center rounded-full border-2 border-dashed border-dashed bg-card text-primary-hover">
+                <Icon name="plus" size={16} stroke={2.6} />
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
       <div className="contents md:flex md:flex-col md:gap-5">
@@ -144,7 +158,13 @@ export function NowScreen() {
             <EmptyCard>{all.length ? 'Nada urgente. Bien.' : 'Agrega tu primer pendiente con el botón +'}</EmptyCard>
           ) : (
             urgent.map((it) => (
-              <ItemCard key={it.id} item={it} onToggle={() => toggle(it)} onOpen={() => setOpenId(it.id)} />
+              <ItemCard
+                key={it.id}
+                item={it}
+                onToggle={() => toggle(it)}
+                onOpen={() => setOpenId(it.id)}
+                onDelete={() => removeItem(it)}
+              />
             ))
           )}
         </section>
