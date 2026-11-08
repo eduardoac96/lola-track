@@ -3,7 +3,7 @@ import { fmtMXN } from '../../lib/money';
 import { DAY_MS } from '../../lib/dates';
 import type { IconName } from '../../ui/Icon';
 
-/** Filtro de la lista. "tarea" agrupa tareas y arreglos (ya no hay pestaña de arreglos). */
+/** Filtro de la lista. "tarea" = todo lo que no es compra (incluye el tipo heredado "arreglo"). */
 export type TypeFilter = 'todo' | 'compra' | 'tarea';
 
 export const matchesType = (t: ItemType, f: TypeFilter): boolean =>
@@ -17,9 +17,13 @@ export const PRIORITIES: ReadonlyArray<{ value: ItemPriority; label: string; dot
 
 export const TYPES: Record<ItemType, { label: string; tint: string; fg: string; icon: IconName }> = {
   compra: { label: 'Compra', tint: 'var(--color-compra-tint)', fg: 'var(--color-compra-fg)', icon: 'compra' },
-  arreglo: { label: 'Arreglo', tint: 'var(--color-arreglo-tint)', fg: 'var(--color-arreglo-fg)', icon: 'arreglo' },
+  // Tipo heredado (ya no se ofrece): se muestra igual que Tarea.
+  arreglo: { label: 'Tarea', tint: 'var(--color-tarea-tint)', fg: 'var(--color-tarea-fg)', icon: 'tarea' },
   tarea: { label: 'Tarea', tint: 'var(--color-tarea-tint)', fg: 'var(--color-tarea-fg)', icon: 'tarea' },
 };
+
+/** Tipos que se pueden elegir en la app. */
+export const SELECTABLE_TYPES = ['compra', 'tarea'] as const;
 
 export const isDone = (i: Pick<Item, 'done_at'>): boolean => i.done_at != null;
 

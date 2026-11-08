@@ -45,6 +45,6 @@ Orden pensado para ROASTER/FIXER: cada tarea es un PR pequeño con su criterio v
 
 - [x] **T24** Toggle día/noche: botón sol/luna en Ahora + Automático/Día/Noche en Ajustes (`data-theme`, se recuerda por dispositivo, sin parpadeo al cargar).
 - [x] **T25** Deslizar a la izquierda para eliminar pendientes (Ahora y Pendientes) con "Deshacer" que restaura la fila completa (foto incluida: su borrado del Storage se difiere). Toast movido arriba para no tapar botones.
-- [x] **T26** Filtro sin pestaña "Arreglos": Todo · Compras · Tareas (Tareas incluye arreglos).
+- [x] **T26** Sin "Arreglo": filtros Todo · Compras · Tareas, editor solo Compra/Tarea, checklist como tareas, `#arreglo` en captura rápida = tarea. El valor sigue en el enum de la DB (sin datos que lo usen) y se muestra como Tarea si aparece.
 - [x] **T27** Reordenar a mano: asa ⋮⋮ por tarjeta, arrastre dentro de cada prioridad (teclado incluido). Columna `items.sort_order` (migración `20261108180000`).
 - [x] **T28** Presupuesto: renombrar y eliminar bolsas (confirmación con conteo de movimientos), tocar un movimiento para editar monto/tipo/concepto; swipe compartido (`ui/SwipeRow`). Corrección: los totales gastado/aportado se ajustan bien al borrar o editar.

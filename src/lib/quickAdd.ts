@@ -4,11 +4,11 @@
  * Tokens (cualquier orden, sin distinguir mayúsculas/acentos):
  *   $4500 · $4,500 · $4 500 · $4500.50   → precio estimado (centavos) e infiere tipo "compra"
  *   !urgente|!u · !pronto|!p · !algun|!algún|!algundia|!a → prioridad (default "pronto")
- *   #compra · #arreglo · #tarea           → tipo explícito (gana sobre la inferencia)
+ *   #compra · #tarea                      → tipo explícito (gana sobre la inferencia; #arreglo = tarea)
  *   @area · @"area con espacios"          → área
  */
 
-export type ItemType = 'compra' | 'arreglo' | 'tarea';
+export type ItemType = 'compra' | 'tarea';
 export type ItemPriority = 'urgente' | 'pronto' | 'algun_dia';
 
 export interface QuickAddResult {
@@ -71,7 +71,7 @@ export function parseQuickAdd(input: string): QuickAddResult {
   if (prio) priority = PRIO_MAP[(prio[2] ?? '').toLowerCase()] ?? 'pronto';
 
   const type = take(TYPE_RE);
-  if (type) explicitType = (type[2] ?? 'tarea').toLowerCase() as ItemType;
+  if (type) explicitType = (type[2] ?? '').toLowerCase() === 'compra' ? 'compra' : 'tarea';
 
   const areaQ = take(AREA_QUOTED_RE);
   if (areaQ) {

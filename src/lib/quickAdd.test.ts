@@ -36,7 +36,8 @@ describe('parseQuickAdd', () => {
   });
 
   it('#tipo gana sobre la inferencia por precio', () => {
-    expect(parseQuickAdd('Plomero $800 #arreglo').type).toBe('arreglo');
+    expect(parseQuickAdd('Plomero $800 #tarea').type).toBe('tarea');
+    expect(parseQuickAdd('Plomero $800 #arreglo').type).toBe('tarea'); // alias heredado
     expect(parseQuickAdd('Tramitar acta #tareas').type).toBe('tarea');
   });
 
@@ -51,7 +52,7 @@ describe('parseQuickAdd', () => {
     expect(r).toMatchObject({
       title: 'Asegurar muebles a la pared',
       area: 'sala',
-      type: 'arreglo',
+      type: 'tarea',
       priority: 'urgente',
     });
   });

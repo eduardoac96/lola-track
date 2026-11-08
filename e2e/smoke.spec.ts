@@ -165,13 +165,16 @@ test.describe('mejoras v1.1', () => {
     await expect(page.getByText('No se guardó')).toHaveCount(0);
   });
 
-  test('ya no hay pestaña de Arreglos y Tareas incluye arreglos', async ({ page }) => {
+  test('sin Arreglos: filtros Todo/Compras/Tareas y el editor solo ofrece Compra/Tarea', async ({ page }) => {
     await page.goto('/preview.html?screen=items');
     const filtros = page.getByRole('radiogroup', { name: 'Filtrar por tipo' });
     await expect(filtros.getByRole('radio')).toHaveText(['Todo', 'Compras', 'Tareas']);
     await filtros.getByRole('radio', { name: 'Tareas' }).click();
-    await expect(page.getByText('Asegurar muebles a la pared')).toBeVisible(); // es un arreglo
+    await expect(page.getByText('Asegurar muebles a la pared')).toBeVisible();
     await expect(page.getByText('Lámpara de noche')).toHaveCount(0); // es compra
+    await expect(page.getByText(/Arreglo/)).toHaveCount(0);
+    await page.getByText('Asegurar muebles a la pared').click();
+    await expect(page.getByRole('radiogroup', { name: 'Tipo' }).getByRole('radio')).toHaveText(['Compra', 'Tarea']);
   });
 
   test('reordenar con teclado mueve el pendiente', async ({ page }) => {

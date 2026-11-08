@@ -61,7 +61,7 @@ const it = (p: Partial<Item>): Item => ({
 });
 
 const items: Item[] = [
-  it({ type: 'arreglo', title: 'Asegurar muebles a la pared', priority: 'urgente', area: 'Sala' }),
+  it({ type: 'tarea', title: 'Asegurar muebles a la pared', priority: 'urgente', area: 'Sala' }),
   it({
     type: 'compra',
     title: 'Protectores de enchufes',
@@ -69,9 +69,9 @@ const items: Item[] = [
     area: 'Toda la casa',
     price_estimated_cents: 35000,
   }),
-  it({ type: 'arreglo', title: 'Revisar calentador', priority: 'urgente', area: 'Baños' }),
+  it({ type: 'tarea', title: 'Revisar calentador', priority: 'urgente', area: 'Baños' }),
   it({ type: 'compra', title: 'Cambiador', area: 'Cuarto niños', price_estimated_cents: 390000 }),
-  it({ type: 'arreglo', title: 'Pintar cuarto de los niños', area: 'Cuarto niños', done_at: at(-2, 12), done_by: ME }),
+  it({ type: 'tarea', title: 'Pintar cuarto de los niños', area: 'Cuarto niños', done_at: at(-2, 12), done_by: ME }),
   it({
     type: 'compra',
     title: 'Monitor para bebé',

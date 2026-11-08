@@ -71,7 +71,7 @@ describe('items/select', () => {
     expect(shown.hiddenDone).toBe(0);
   });
 
-  it('filtra por tipo (tareas incluye arreglos) y por área sin distinguir mayúsculas', () => {
+  it('filtra por tipo (Tareas incluye el tipo heredado arreglo) y por área sin distinguir mayúsculas', () => {
     const compras = groupItems(all, { type: 'compra', area: null, showAllDone: true, now: NOW });
     expect(compras.groups.flatMap((g) => g.items)).toHaveLength(3);
     const tareas = groupItems(all, { type: 'tarea', area: null, showAllDone: true, now: NOW });

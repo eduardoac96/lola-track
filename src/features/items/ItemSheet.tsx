@@ -6,7 +6,7 @@ import { centsToInput, parsePesos } from '../../lib/money';
 import { Sheet } from '../../ui/Sheet';
 import { Icon } from '../../ui/Icon';
 import { Field, GhostButton, PrimaryButton, Segmented, inputCls } from '../../ui/kit';
-import { PRIORITIES, TYPES, isDone } from './select';
+import { PRIORITIES, SELECTABLE_TYPES, TYPES, isDone } from './select';
 import { useDeleteWithUndo } from './useDeleteWithUndo';
 
 interface Draft {
@@ -23,7 +23,7 @@ interface Draft {
 
 const toDraft = (i: Item): Draft => ({
   title: i.title,
-  type: i.type,
+  type: i.type === 'compra' ? 'compra' : 'tarea',
   priority: i.priority,
   area: i.area ?? '',
   est: centsToInput(i.price_estimated_cents),
@@ -125,7 +125,7 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
           size="sm"
           value={d.type}
           onChange={(v) => set('type', v)}
-          options={(Object.keys(TYPES) as ItemType[]).map((k) => ({ value: k, label: TYPES[k].label }))}
+          options={SELECTABLE_TYPES.map((k) => ({ value: k, label: TYPES[k].label }))}
         />
         <Segmented
           label="Prioridad"
