@@ -6,10 +6,11 @@ Orden pensado para ROASTER/FIXER: cada tarea es un PR pequeño con su criterio v
 ## Fase 0 · Fundaciones (~6–8 h)
 
 - [x] **T01** Scaffold Vite + React + TS strict + Tailwind v4 (tokens §5 en `@theme`) + ESLint/Prettier + Vitest → `npm run build && npm test` en verde.
-- [ ] **T02** [P] Proyecto Supabase, aplicar `supabase/migrations/20261108000000_init.sql`, plantilla de email con `{{ .Token }}` → `supabase db push` sin errores.
+- [x] **T02** [P] Proyecto Supabase `lola-track` (`xkiumlisdkxwqlvuqneg`, us-west-2) con 3 migraciones aplicadas, advisors revisados y tipos en `src/lib/database.types.ts`.
+  - [ ] **T02b** (manual, dashboard) Auth → Email: plantilla "Magic Link" con `{{ .Token }}` (código 6 dígitos), OTP expiry 600 s, Site URL = dominio de Cloudflare Pages.
 - [x] **T03** `lib/supabase.ts`, `lib/money.ts` (`toCents`, `fromCents`, `fmtMXN`) con tests → los tests cubren 0, negativos y miles.
 - [ ] **T04** Auth OTP (pedir correo → 6 dígitos) + onboarding (crear hogar / unirse con código) + invitar con `navigator.share` → dos cuentas terminan en el mismo hogar.
-- [ ] **T05** Pruebas de RLS (SQL o Vitest con 3 usuarios: A y B en el hogar 1, C en el hogar 2) → C no lee ni escribe nada del hogar 1; B no puede unirse con un código ya usado o vencido.
+- [x] **T05** Pruebas de RLS (local: `supabase/tests`; remoto: 15 casos en verde 2026-11-08) (SQL o Vitest con 3 usuarios: A y B en el hogar 1, C en el hogar 2) → C no lee ni escribe nada del hogar 1; B no puede unirse con un código ya usado o vencido.
 - [ ] **T06** UI shell: TabBar, Sheet, Fab, Avatar, Chip, iconos SVG → navega entre 4 rutas en un iPhone de 390 px.
 - [ ] **T07** `lib/quickAdd.ts` (ya incluido) + componente QuickAdd con vista previa de chips → los tests de `quickAdd.test.ts` pasan.
 - [ ] **T08** Pendientes: lista agrupada, filtros, completar/reabrir (sin presupuesto aún), editar en sheet, eliminar → criterios H3.

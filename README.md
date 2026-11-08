@@ -5,12 +5,12 @@ Pendientes, agenda y presupuesto compartidos para el hogar. PWA para iPhone, iPa
 - Spec: [`specs/001-mvp/spec.md`](specs/001-mvp/spec.md)
 - Plan técnico: [`specs/001-mvp/plan.md`](specs/001-mvp/plan.md)
 - Tareas: [`specs/001-mvp/tasks.md`](specs/001-mvp/tasks.md)
-- Base de datos: [`supabase/migrations/20261108000000_init.sql`](supabase/migrations/20261108000000_init.sql)
+- Base de datos: [`supabase/migrations/`](supabase/migrations/) — proyecto Supabase `xkiumlisdkxwqlvuqneg`
 - Parser de captura rápida: [`src/lib/quickAdd.ts`](src/lib/quickAdd.ts)
 
 ## Arranque
 
-1. Crea un proyecto en Supabase → `supabase link` → `supabase db push`.
-2. Auth → Email: activa OTP y cambia la plantilla para que muestre `{{ .Token }}`.
-3. `cp .env.example .env` y llena `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
-4. Ejecuta las tareas de `tasks.md` en orden (T01 → T11 = usable en el iPhone).
+1. `npm i`
+2. `cp .env.example .env` (ya trae URL y publishable key del proyecto).
+3. `npm run dev`
+4. Pendiente manual: plantilla de email OTP en Supabase (ver T02b en `tasks.md`).

@@ -1,8 +1,8 @@
--- Lola Track · init schema
+-- Lola Track · init schema (applied 2026-11-08 as version 20261108023008)
 -- Households (2–4 members) share items, events and budgets. All access via RLS on is_member(household_id).
 -- Money: bigint cents. Balances computed by view (never stored).
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 -- ───────────────────────── Types
 create type public.item_type as enum ('compra', 'arreglo', 'tarea');
@@ -10,7 +10,7 @@ create type public.item_priority as enum ('urgente', 'pronto', 'algun_dia');
 
 -- ───────────────────────── Helpers
 create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = public as $$
 begin
   new.updated_at := now();
   return new;
@@ -41,6 +41,7 @@ create table public.household_invites (
   used_by       uuid references auth.users (id) on delete set null,
   used_at       timestamptz
 );
+create index household_invites_household_idx on public.household_invites (household_id);
 
 -- Security definer: avoids RLS recursion on household_members.
 create or replace function public.is_member(h uuid)
@@ -127,7 +128,7 @@ create index events_pending_reminder_idx on public.events (starts_at)
   where reminded_at is null and remind_minutes is not null;
 
 create or replace function public.events_before_update()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = public as $$
 begin
   new.updated_at := now();
   if new.starts_at is distinct from old.starts_at
@@ -179,14 +180,14 @@ alter table public.events              enable row level security;
 alter table public.push_subscriptions  enable row level security;
 
 -- households: read/rename own; create only via RPC
-create policy households_select on public.households for select using (public.is_member(id));
-create policy households_update on public.households for update using (public.is_member(id)) with check (public.is_member(id));
+create policy households_select on public.households for select to authenticated using (public.is_member(id));
+create policy households_update on public.households for update to authenticated using (public.is_member(id)) with check (public.is_member(id));
 
 -- members: read co-members; edit own profile; join only via RPC
-create policy members_select on public.household_members for select using (public.is_member(household_id));
-create policy members_update_self on public.household_members for update
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy members_leave_self on public.household_members for delete using (user_id = auth.uid());
+create policy members_select on public.household_members for select to authenticated using (public.is_member(household_id));
+create policy members_update_self on public.household_members for update to authenticated
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+create policy members_leave_self on public.household_members for delete to authenticated using (user_id = (select auth.uid()));
 
 -- invites: no direct access (RPC only) → no policies.
 
@@ -196,7 +197,7 @@ declare t text;
 begin
   foreach t in array array['budgets', 'budget_movements', 'items', 'events'] loop
     execute format(
-      'create policy %1$s_member_all on public.%1$s for all
+      'create policy %1$s_member_all on public.%1$s for all to authenticated
          using (public.is_member(household_id))
          with check (public.is_member(household_id))', t);
   end loop;
@@ -232,9 +233,9 @@ create trigger items_same_household before insert or update on public.items
   for each row execute function public.check_same_household();
 
 -- push: own rows only, and only for a household you belong to
-create policy push_own on public.push_subscriptions for all
-  using (user_id = auth.uid())
-  with check (user_id = auth.uid() and public.is_member(household_id));
+create policy push_own on public.push_subscriptions for all to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()) and public.is_member(household_id));
 
 -- ───────────────────────── RPCs
 create or replace function public.create_household(p_name text, p_display_name text, p_color text default '#5B47E0')
@@ -259,7 +260,7 @@ begin
   -- 8 chars, unambiguous alphabet (no 0/O/1/I)
   select string_agg(substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 1 + (get_byte(b, i) % 32), 1), '')
     into c
-    from (select gen_random_bytes(8) as b) r, generate_series(0, 7) as i;
+    from (select extensions.gen_random_bytes(8) as b) r, generate_series(0, 7) as i;
   insert into household_invites (code, household_id, created_by) values (c, p_household, auth.uid());
   return c;
 end $$;
@@ -311,7 +312,6 @@ begin
   select * into it from items where id = p_item for update;
   if not found or not public.is_member(it.household_id) then raise exception 'forbidden'; end if;
   if it.done_at is not null then return it; end if;
-
   if p_budget is not null and coalesce(p_actual_cents, 0) > 0 then
     if not exists (select 1 from budgets where id = p_budget and household_id = it.household_id) then
       raise exception 'budget does not belong to household';
@@ -320,7 +320,6 @@ begin
       values (it.household_id, p_budget, -p_actual_cents, left(it.title, 80), it.id, auth.uid())
       returning id into mv;
   end if;
-
   update items set
     done_at = now(),
     done_by = auth.uid(),
@@ -353,6 +352,7 @@ revoke execute on function public.join_household(text, text, text)  from public,
 revoke execute on function public.create_budget(uuid, text, bigint) from public, anon;
 revoke execute on function public.complete_item(uuid, bigint, uuid) from public, anon;
 revoke execute on function public.reopen_item(uuid)                 from public, anon;
+revoke execute on function public.check_same_household()            from public, anon, authenticated;
 grant  execute on function public.create_household(text, text, text) to authenticated;
 grant  execute on function public.create_invite(uuid)               to authenticated;
 grant  execute on function public.join_household(text, text, text)  to authenticated;
@@ -380,7 +380,7 @@ create policy photos_member_delete on storage.objects for delete to authenticate
   using (bucket_id = 'photos' and public.is_member(((storage.foldername(name))[1])::uuid));
 
 -- ───────────────────────── Reminders (pg_cron → Edge Function)
--- Ejecutar una vez tras desplegar la función (requiere extensiones pg_cron y pg_net en el proyecto):
+-- Ejecutar una vez tras desplegar la función (T16; requiere pg_cron y pg_net):
 --
 -- select cron.schedule('lola-send-reminders', '*/5 * * * *', $$
 --   select net.http_post(

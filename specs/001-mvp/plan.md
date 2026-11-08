@@ -21,7 +21,7 @@ lola-track/
 ├─ CLAUDE.md
 ├─ specs/001-mvp/{spec,plan,tasks}.md
 ├─ supabase/
-│  ├─ migrations/20261108000000_init.sql
+│  ├─ migrations/2026110802xxxx_*.sql
 │  ├─ functions/send-reminders/index.ts
 │  └─ seed.sql                       # opcional, datos del mockup
 ├─ public/ (icons 192/512/maskable, apple-touch-icon 180)
@@ -40,7 +40,7 @@ lola-track/
 
 ## 3. Datos
 
-Migración completa en `supabase/migrations/20261108000000_init.sql`. Resumen:
+Migraciones en `supabase/migrations/` (init + hardening + grants), aplicadas al proyecto `xkiumlisdkxwqlvuqneg`. Resumen:
 
 | Tabla                    | Clave                   | Notas                                                                                                          |
 | ------------------------ | ----------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -69,7 +69,9 @@ Migración completa en `supabase/migrations/20261108000000_init.sql`. Resumen:
 7. **Zona horaria:** `timestamptz` en la base y presentación en `America/Monterrey` (configurable por hogar más adelante).
 8. **Fotos:** bucket privado `photos`, leídas con `createSignedUrl` (1 h) y cacheadas en memoria por `photo_path`.
 9. **iPad:** a partir de 768 px, layout de dos columnas; el mismo código, sin app nativa.
-10. **Seguridad:** la anon key es pública por diseño; toda la protección está en RLS. Las pruebas de RLS van en tasks T05.
+10. **Seguridad:** la anon/publishable key es pública por diseño; toda la protección está en RLS. Las pruebas de RLS van en tasks T05.
+11. **Grants explícitos:** en este proyecto las tablas nuevas NO se exponen solas a la Data API. Toda tabla nueva necesita `grant ... to authenticated` (nunca `anon`) además de RLS (ver `20261108023057_explicit_api_grants.sql`).
+12. **pgcrypto vive en `extensions`:** dentro de funciones con `search_path = public`, llamar `extensions.gen_random_bytes(...)`.
 
 ## 5. Variables de entorno
 

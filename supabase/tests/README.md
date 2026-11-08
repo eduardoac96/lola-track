@@ -2,7 +2,7 @@
 
 ```bash
 createdb lola_test
-psql -d lola_test -f 00_supabase_stub.sql -f ../migrations/20261108000000_init.sql -f 01_grants.sql
+psql -d lola_test -f 00_supabase_stub.sql $(ls ../migrations/*.sql | sed 's/^/-f /') -f 01_grants.sql
 psql -d lola_test -f 10_rls_smoke.sql   # cada NOTICE "... blocked" = caso de seguridad OK
 ```
 

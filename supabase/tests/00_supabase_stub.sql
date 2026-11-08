@@ -1,3 +1,4 @@
+create schema if not exists extensions;
 do $$ begin if not exists (select 1 from pg_roles where rolname='anon') then create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls; end if; end $$;
 create schema auth; create schema storage;
 create table auth.users (id uuid primary key);
