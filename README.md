@@ -1,4 +1,4 @@
-# Nido
+# Lola Track
 
 Pendientes, agenda y presupuesto compartidos para el hogar. PWA para iPhone, iPad y web, con sincronización en tiempo real.
 

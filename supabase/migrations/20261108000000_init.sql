@@ -1,4 +1,4 @@
--- Nido · init schema
+-- Lola Track · init schema
 -- Households (2–4 members) share items, events and budgets. All access via RLS on is_member(household_id).
 -- Money: bigint cents. Balances computed by view (never stored).
 
@@ -382,7 +382,7 @@ create policy photos_member_delete on storage.objects for delete to authenticate
 -- ───────────────────────── Reminders (pg_cron → Edge Function)
 -- Ejecutar una vez tras desplegar la función (requiere extensiones pg_cron y pg_net en el proyecto):
 --
--- select cron.schedule('nido-send-reminders', '*/5 * * * *', $$
+-- select cron.schedule('lola-send-reminders', '*/5 * * * *', $$
 --   select net.http_post(
 --     url     := 'https://<project-ref>.supabase.co/functions/v1/send-reminders',
 --     headers := jsonb_build_object('Content-Type', 'application/json',
