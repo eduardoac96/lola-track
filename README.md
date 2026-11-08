@@ -19,12 +19,12 @@ npm run dev               # http://localhost:5173
 - Vista previa de pantallas con datos de ejemplo, sin login ni backend: `http://localhost:5173/preview.html?screen=now|items|agenda|budget|login|onboarding`
 - `npm test` · `npm run build` · `npm run lint` · `npm run e2e` (Playwright; `CHROME_PATH=/ruta/chrome` si no instalaste sus navegadores)
 
-## Pendientes manuales (requieren tus cuentas)
+## Estado del despliegue
 
-1. **Correo con código (T02b)**: Supabase → Authentication → Email Templates → _Magic Link_ → en el cuerpo pon `{{ .Token }}` (ej. `Tu código para Lola Track: {{ .Token }}`). Sin esto llega un link y el login por código no funciona.
-2. **Publicar (T11)**: Cloudflare → Workers & Pages → Create → Pages → conectar `eduardoac96/lola-track`. Build `npm run build`, salida `dist`. Variables: copia las 3 de `.env.example`.
-3. **URL en Supabase**: Authentication → URL Configuration → _Site URL_ = la dirección que te dé Cloudflare.
-4. **En cada iPhone**: abrir la URL en Safari → Compartir → _Agregar a pantalla de inicio_ → abrir Lola desde el ícono → tocar los avatares → _Activar avisos_.
+- ✅ Cloudflare Pages: https://lola-track.pages.dev (build `npm run build` → `dist`, Node 22; variables públicas en `.env.production`).
+- ✅ Supabase Auth Site URL = https://lola-track.pages.dev.
+- ⏳ **Correo (requiere tu cuenta)**: el SMTP integrado de Supabase solo envía a miembros del equipo de la organización y no permite editar plantillas. Configura un SMTP propio (p. ej. Brevo gratis) en Supabase → Authentication → Emails → SMTP Settings. Después se editan las plantillas _Magic link or OTP_ y _Confirm sign up_ para incluir `{{ .Token }}`.
+- Mientras tanto la app acepta el **link** del correo: tocarlo en la computadora, o copiarlo y pegarlo en la app del iPhone.
 
 ## Backend (ya configurado en `xkiumlisdkxwqlvuqneg`)
 

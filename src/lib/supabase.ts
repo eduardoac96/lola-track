@@ -14,7 +14,8 @@ export function supabase(): SupabaseClient<Database> {
     throw new Error('Supabase no configurado: define VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY (.env)');
   }
   client ??= createClient<Database>(url, anonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, flowType: 'pkce' },
+    // implicit: el link del correo trae token_hash utilizable desde cualquier navegador (PWA de iOS incluida).
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' },
     realtime: { params: { eventsPerSecond: 10 } },
   });
   return client;

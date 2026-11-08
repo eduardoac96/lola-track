@@ -1,15 +1,24 @@
 import { useState, type FormEvent } from 'react';
-import { requestOtp, verifyOtp } from '../../data/session';
+import { parseEmailLink, requestOtp, verifyEmailLink, verifyOtp } from '../../data/session';
 import { friendlyError } from '../../data/household';
 import { Field, PrimaryButton, inputCls } from '../../ui/kit';
 
-/** Login con código de 6 dígitos por correo (sin magic links: en iOS abrirían Safari, no la PWA). */
+/**
+ * Login sin contraseña. El correo puede traer un código de 6 dígitos o un link:
+ * - Código: se escribe aquí.
+ * - Link: en la computadora basta tocarlo; en la app instalada del iPhone (que no comparte sesión
+ *   con Safari) se copia el link y se pega aquí.
+ */
 export function LoginScreen() {
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const digits = value.replace(/\D/g, '');
+  const isLink = parseEmailLink(value) != null;
+  const ready = isLink || (digits.length === 6 && !/[a-z]/i.test(value));
 
   const sendCode = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -30,10 +39,20 @@ export function LoginScreen() {
     setBusy(true);
     setError(null);
     try {
-      await verifyOtp(email.trim().toLowerCase(), code.trim());
+      if (isLink) await verifyEmailLink(value);
+      else await verifyOtp(email.trim().toLowerCase(), digits);
     } catch (err) {
-      setError(friendlyError(err));
+      setError(isLink ? 'El link no es válido o ya se usó. Pide uno nuevo y cópialo sin abrirlo.' : friendlyError(err));
       setBusy(false);
+    }
+  };
+
+  const paste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) setValue(text.trim());
+    } catch {
+      setError('No pude leer el portapapeles. Mantén presionado el campo y elige "Pegar".');
     }
   };
 
@@ -67,21 +86,33 @@ export function LoginScreen() {
         </form>
       ) : (
         <form onSubmit={verify} className="flex flex-col gap-4">
-          <Field label={`Código que enviamos a ${email}`} hint="Revisa también spam. El código dura 10 minutos.">
+          <p className="m-0 text-[14px] font-medium text-muted">
+            Te enviamos un correo a <b className="text-ink">{email}</b>. Si trae un <b>código</b>, escríbelo. Si trae un{' '}
+            <b>link</b>: en la computadora tócalo; en la app del iPhone mantén presionado el botón del correo, elige
+            “Copiar” y pégalo aquí.
+          </p>
+          <Field label="Código o link del correo" hint="Revisa también spam. Vence en unos minutos.">
             <input
-              className={`${inputCls} text-center text-[26px] tracking-[0.4em]`}
-              inputMode="numeric"
+              className={`${inputCls} ${isLink ? 'text-[14px]' : 'text-center text-[24px] tracking-[0.3em]'}`}
+              inputMode={isLink ? 'url' : 'numeric'}
               autoComplete="one-time-code"
-              pattern="[0-9]*"
-              maxLength={6}
+              autoCapitalize="off"
+              autoCorrect="off"
               required
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="••••••"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="123456"
               data-autofocus
             />
           </Field>
-          <PrimaryButton type="submit" disabled={busy || code.length !== 6}>
+          <button
+            type="button"
+            onClick={paste}
+            className="-mt-2 h-11 self-start text-[14px] font-bold text-primary-hover"
+          >
+            Pegar del portapapeles
+          </button>
+          <PrimaryButton type="submit" disabled={busy || !ready}>
             {busy ? 'Entrando…' : 'Entrar'}
           </PrimaryButton>
           <div className="flex justify-between text-[14px] font-bold">
@@ -89,7 +120,7 @@ export function LoginScreen() {
               Cambiar correo
             </button>
             <button type="button" className="h-11 text-primary-hover" disabled={busy} onClick={() => sendCode()}>
-              Reenviar código
+              Reenviar
             </button>
           </div>
         </form>

@@ -88,5 +88,7 @@ export function friendlyError(e: unknown): string {
   if (msg.includes('Token has expired') || msg.includes('invalid')) return 'Código incorrecto o expirado.';
   if (msg.includes('rate limit') || msg.includes('seconds')) return 'Espera unos segundos antes de pedir otro código.';
   if (msg.includes('Failed to fetch')) return 'Sin conexión. Intenta de nuevo.';
+  if (msg.includes('not authorized') || msg.includes('not_authorized'))
+    return 'Ese correo aún no puede recibir códigos (falta configurar el envío de correos).';
   return 'Algo salió mal. Intenta de nuevo.';
 }
