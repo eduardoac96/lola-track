@@ -438,6 +438,10 @@ export type Database = {
         Args: { p_code: string; p_color?: string; p_display_name: string };
         Returns: string;
       };
+      switch_household: {
+        Args: { p_code: string; p_color?: string; p_display_name: string };
+        Returns: string;
+      };
       reopen_item: {
         Args: { p_item: string };
         Returns: Database['public']['Tables']['items']['Row'];

@@ -174,7 +174,10 @@ test.describe('mejoras v1.1', () => {
     await expect(page.getByText('Lámpara de noche')).toHaveCount(0); // es compra
     await expect(page.getByText(/Arreglo/)).toHaveCount(0);
     await page.getByText('Asegurar muebles a la pared').click();
-    await expect(page.getByRole('radiogroup', { name: 'Tipo', exact: true }).getByRole('radio')).toHaveText(['Compra', 'Tarea']);
+    await expect(page.getByRole('radiogroup', { name: 'Tipo', exact: true }).getByRole('radio')).toHaveText([
+      'Compra',
+      'Tarea',
+    ]);
   });
 
   test('reordenar con teclado mueve el pendiente', async ({ page }) => {
@@ -235,4 +238,28 @@ test.describe('mejoras v1.1', () => {
     await expect(page.getByText('Disponible en Arreglos casa')).toBeVisible();
     await expect(page.getByText('No se guardó')).toHaveCount(0);
   });
+});
+
+test('quien está solo puede unirse al hogar de su pareja (con aviso si pierde datos)', async ({ page }) => {
+  let called = false;
+  await page.route('**/rest/v1/rpc/switch_household', (r) => {
+    called = true;
+    return r.fulfill({ json: 'h-pareja' });
+  });
+  await page.goto('/preview.html?screen=now&solo=1');
+  await page.getByRole('button', { name: 'Hogar y ajustes' }).click();
+  await expect(page.getByRole('heading', { name: '¿Tu pareja ya tiene un hogar en Lola?' })).toBeVisible();
+  await page.getByLabel('Código de invitación').fill('abcd2345');
+  await page.getByRole('button', { name: 'Unirme a su hogar' }).click();
+  await expect(page.getByText(/Tu hogar actual se borrará con 10 pendientes, 5 eventos y 8 movimientos/)).toBeVisible();
+  await page.getByRole('button', { name: 'Borrar mi hogar y unirme' }).click();
+  await expect.poll(() => called).toBe(true);
+  await expect(page.getByText('No se guardó')).toHaveCount(0);
+});
+
+test('con 2 miembros no se ofrece cambiar de hogar', async ({ page }) => {
+  await page.goto('/preview.html?screen=now');
+  await page.getByRole('button', { name: 'Hogar y ajustes' }).click();
+  await expect(page.getByRole('heading', { name: 'Invitar a tu pareja' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '¿Tu pareja ya tiene un hogar en Lola?' })).toHaveCount(0);
 });

@@ -165,12 +165,15 @@ qc.setQueryData(keys.events(HID), events);
 qc.setQueryData(keys.balances(HID), balances);
 qc.setQueryData(keys.movements(HID), movements);
 
+// ?solo=1 simula a alguien solo en su hogar (muestra "Unirme a otro hogar" en Ajustes)
+const shownMembers = new URLSearchParams(location.search).has('solo') ? members.slice(0, 1) : members;
+
 const ctx: AppCtx = {
   userId: ME,
   email: 'odin@example.com',
   hid: HID,
   household: { id: HID, name: 'Nuestra casa', created_at: at(-30, 9) },
-  members,
+  members: shownMembers,
   memberById: (id) => members.find((m) => m.user_id === id),
 };
 

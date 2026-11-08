@@ -42,6 +42,12 @@ export function OnboardingScreen({ userId, email }: { userId: string; email: str
         ]}
       />
 
+      {mode === 'create' && (
+        <p className="m-0 -mt-2 rounded-2xl bg-arreglo-tint p-3 text-[13px] font-semibold text-arreglo-fg">
+          Si tu pareja ya creó el hogar, no crees otro: elige «Tengo un código» y escribe el suyo.
+        </p>
+      )}
+
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Field label="Tu nombre (así te verá tu pareja)">
           <input

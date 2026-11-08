@@ -70,6 +70,26 @@ export function useJoinHousehold(userId: string | undefined) {
   });
 }
 
+/** Deja el hogar actual (si quedabas solo, se borra con sus datos) y entra al del código. */
+export function useSwitchHousehold(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { code: string; displayName: string }) => {
+      const { data, error } = await supabase().rpc('switch_household', {
+        p_code: v.code,
+        p_display_name: v.displayName,
+        p_color: MEMBER_COLORS[1],
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.removeQueries({ predicate: (q) => q.queryKey[0] !== 'household' });
+      return qc.invalidateQueries({ queryKey: keys.household(userId) });
+    },
+  });
+}
+
 export function useCreateInvite() {
   return useMutation({
     mutationFn: async (hid: string) => {

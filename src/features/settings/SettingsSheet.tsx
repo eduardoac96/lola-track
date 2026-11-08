@@ -7,6 +7,7 @@ import { Sheet } from '../../ui/Sheet';
 import { Icon } from '../../ui/Icon';
 import { Avatar, Field, GhostButton, PrimaryButton, Segmented, inputCls, useToast } from '../../ui/kit';
 import { useTheme } from '../../lib/useTheme';
+import { JoinOtherHousehold } from './JoinOtherHousehold';
 import { ChecklistButton } from '../items/ChecklistButton';
 
 const PUSH_COPY: Record<PushState, string> = {
@@ -92,6 +93,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           )}
           {invite.error && <p className="m-0 text-[13px] font-semibold text-gasto">{friendlyError(invite.error)}</p>}
         </section>
+
+        {members.length === 1 && <JoinOtherHousehold />}
 
         <section className="flex flex-col gap-3 rounded-[var(--radius-card)] bg-bg p-4">
           <h3 className="m-0 flex items-center gap-2 text-[15px] font-extrabold">
