@@ -39,7 +39,7 @@ Preparar la casa para la llegada de los niños genera decenas de compras, arregl
 
 ### H1 · Entrar y emparejar
 
-- **Dado** un correo nuevo, **cuando** pido código, **entonces** recibo 6 dígitos y al ingresarlos entro sin salir de la PWA (nada de magic links: en iOS abren Safari, no la PWA).
+- **Dado** un correo y una contraseña (mín. 8), **cuando** elijo "Crear cuenta", **entonces** entro al instante sin depender de correos ("Confirm email" desactivado en Supabase). "Entrar" usa las mismas credenciales; `autocomplete` permite guardarlas en el Llavero de iOS. Sin OTP ni magic links (el SMTP integrado de Supabase solo envía a miembros del equipo).
 - **Dado** que no tengo hogar, veo dos opciones: "Crear hogar" (nombre + mi nombre) o "Unirme con código".
 - "Invitar" genera un código de 8 caracteres que vale 7 días y se usa una vez; la UI lo comparte con el share sheet nativo (`navigator.share`).
 - Al unirse, el segundo miembro ve de inmediato todos los datos del hogar.
