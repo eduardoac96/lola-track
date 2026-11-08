@@ -26,17 +26,17 @@ Orden pensado para ROASTER/FIXER: cada tarea es un PR pequeño con su criterio v
 - [x] **T12** Presupuesto: pills de bolsas, BalanceCard (view `budget_balances`), AmountSheet con teclado y chips, lista de movimientos, eliminar con deshacer → criterios H5.
 - [x] **T13** CompleteSheet para compras → RPC `complete_item`; reabrir → `reopen_item` → criterios H4 (el saldo se mueve y regresa).
 - [x] **T14** Agenda: WeekStrip, EventCard, EventSheet (crear/editar/eliminar, vínculo a pendiente) → criterios H6 sin push.
-- [x] **T15** Push (código listo; falta **T15b** manual: llaves VAPID): `lib/push.ts` (suscribir/guardar en `push_subscriptions`), handler `push` y `notificationclick` en `sw.ts`, botón "Activar avisos" → llega un push de prueba a un iPhone con la PWA instalada.
+- [x] **T15** Push (llaves VAPID generadas y guardadas en Vault; la función las lee vía `get_push_config()`): `lib/push.ts` (suscribir/guardar en `push_subscriptions`), handler `push` y `notificationclick` en `sw.ts`, botón "Activar avisos" → llega un push de prueba a un iPhone con la PWA instalada.
 - [x] **T16** Edge Function `send-reminders` desplegada + pg_cron cada 5 min (secreto en Vault; probado: 200 con secreto, 403 sin él) → un evento a 61 min avisa una sola vez; si se edita la hora, vuelve a avisar.
 - [x] **T17** Pantalla Ahora: anillo, bolsa principal, 3 urgentes, 2 próximos → criterios H7.
 - [x] **T18** Fotos: `lib/image.ts` (resize a WebP ≤1280), subida a `photos/{hid}/{item}.webp`, miniatura con signed URL → una foto de 4 MB del iPhone queda por debajo de 300 KB.
 
-  - [ ] **T15b** (manual) `npx web-push generate-vapid-keys` → en Supabase → Edge Functions → Secrets: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT=mailto:<tu-correo>`; y la pública en `VITE_VAPID_PUBLIC_KEY` (Cloudflare + `.env`). Mientras no estén, la función responde `skipped` sin consumir avisos.
+  - [x] **T15b** Llaves VAPID: en Vault (`lola_vapid_public`, `lola_vapid_private`); pública en `.env.example`. Ya no requiere paso manual.
 
 ## Fase 2 · Pulido (backlog)
 
-- [ ] **T19** iPad: dos columnas y rail lateral a partir de 768 px.
-- [ ] **T20** Modo oscuro (tokens dark).
-- [ ] **T21** Plantilla "Checklist llegada" (seed opcional de ~25 pendientes típicos, editable).
-- [ ] **T22** Recordatorio de pendientes con `due_date` vencida (8:00 am).
-- [ ] **T23** Playwright smoke en viewport iPhone 14: login con OTP mockeado → crear → completar compra → saldo.
+- [x] **T19** iPad: dos columnas y rail lateral a partir de 768 px.
+- [x] **T20** Modo oscuro (tokens dark).
+- [x] **T21** Plantilla "Checklist llegada" (seed opcional de ~25 pendientes típicos, editable).
+- [x] **T22** Recordatorio de pendientes con `due_date` (desde 8:00 Monterrey, un aviso por hogar; se reprograma si cambia la fecha). Probado contra la función desplegada.
+- [x] **T23** Playwright smoke en viewport iPhone 14: login con OTP mockeado → crear → completar compra → saldo.

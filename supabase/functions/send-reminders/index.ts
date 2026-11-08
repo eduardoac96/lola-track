@@ -1,8 +1,10 @@
 // Lola Track · send-reminders
-// pg_cron la llama cada 5 min con el header x-cron-secret (guardado en Vault).
-// Toma eventos con aviso vencido, los "reclama" (reminded_at) para no duplicar y manda Web Push
-// a todas las suscripciones del hogar. Endpoints 404/410 se borran.
-import { createClient } from 'npm:@supabase/supabase-js@2';
+// pg_cron la llama cada 5 min con el header x-cron-secret (Vault: lola_cron_secret).
+// 1) Eventos con aviso vencido → un push por evento.
+// 2) Pendientes cuya fecha llegó (desde las 8:00) → un push por hogar con la lista.
+// Cada aviso se "reclama" antes de enviarse (reminded_at / due_reminded_at) para no duplicar.
+// Llaves VAPID: secrets de la función si existen; si no, Vault vía get_push_config().
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 
 const json = (body: unknown, status = 200) =>
@@ -10,13 +12,46 @@ const json = (body: unknown, status = 200) =>
 
 function whenText(startsAt: string, now: number): string {
   const mins = Math.max(0, Math.round((Date.parse(startsAt) - now) / 60_000));
-  // Hora local del hogar (Monterrey)
   const local = new Date(startsAt).toLocaleString('en-US', { timeZone: 'America/Monterrey', hour12: false });
   const [, time = ''] = local.split(', ');
   const hhmm = time.slice(0, 5).replace(/^24/, '00');
   if (mins < 60) return `En ${mins} min · ${hhmm}`;
   if (mins < 24 * 60) return `En ${Math.round(mins / 60)} h · ${hhmm}`;
   return `Mañana · ${hhmm}`;
+}
+
+function listText(titles: string[]): string {
+  const shown = titles.slice(0, 3).join(', ');
+  return titles.length > 3 ? `${shown} y ${titles.length - 3} más` : shown;
+}
+
+type Stats = { sent: number; pruned: number };
+
+async function sendToHousehold(sb: SupabaseClient, householdId: string, payload: object, stats: Stats) {
+  const { data: subs } = await sb
+    .from('push_subscriptions')
+    .select('id, endpoint, p256dh, auth')
+    .eq('household_id', householdId);
+  const body = JSON.stringify(payload);
+  await Promise.all(
+    (subs ?? []).map(async (s) => {
+      try {
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body, {
+          TTL: 3600,
+          urgency: 'high',
+        });
+        stats.sent++;
+      } catch (e) {
+        const code = (e as { statusCode?: number }).statusCode;
+        if (code === 404 || code === 410) {
+          await sb.from('push_subscriptions').delete().eq('id', s.id);
+          stats.pruned++;
+        } else {
+          console.error('push failed', code, (e as Error).message);
+        }
+      }
+    }),
+  );
 }
 
 Deno.serve(async (req) => {
@@ -32,21 +67,25 @@ Deno.serve(async (req) => {
   });
   if (authErr || ok !== true) return json({ error: 'forbidden' }, 403);
 
-  const pub = Deno.env.get('VAPID_PUBLIC_KEY');
-  const priv = Deno.env.get('VAPID_PRIVATE_KEY');
+  let pub = Deno.env.get('VAPID_PUBLIC_KEY');
+  let priv = Deno.env.get('VAPID_PRIVATE_KEY');
+  if (!pub || !priv) {
+    const { data: cfg } = await sb.rpc('get_push_config').maybeSingle<{ public_key: string; private_key: string }>();
+    pub = cfg?.public_key ?? undefined;
+    priv = cfg?.private_key ?? undefined;
+  }
   if (!pub || !priv) return json({ skipped: 'vapid not configured' });
   webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') ?? 'mailto:avisos@lola-track.app', pub, priv);
 
+  const now = Date.now();
+  const stats: Stats = { sent: 0, pruned: 0 };
+  let events = 0;
+  let dueHouseholds = 0;
+
+  // 1) Eventos
   const { data: due, error } = await sb.rpc('due_reminders');
   if (error) return json({ error: error.message }, 500);
-
-  const now = Date.now();
-  let sent = 0;
-  let pruned = 0;
-  let events = 0;
-
   for (const ev of due ?? []) {
-    // Reclamo atómico: si otra ejecución ya lo tomó, no hay fila y se salta.
     const { data: claimed } = await sb
       .from('events')
       .update({ reminded_at: new Date().toISOString() })
@@ -56,39 +95,44 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!claimed) continue;
     events++;
-
-    const { data: subs } = await sb
-      .from('push_subscriptions')
-      .select('id, endpoint, p256dh, auth')
-      .eq('household_id', ev.household_id);
-
-    const payload = JSON.stringify({
-      title: ev.title,
-      body: [whenText(ev.starts_at, now), ev.place].filter(Boolean).join(' · '),
-      url: '/agenda',
-      tag: `event-${ev.event_id}`,
-    });
-
-    await Promise.all(
-      (subs ?? []).map(async (s) => {
-        try {
-          await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, {
-            TTL: 3600,
-            urgency: 'high',
-          });
-          sent++;
-        } catch (e) {
-          const code = (e as { statusCode?: number }).statusCode;
-          if (code === 404 || code === 410) {
-            await sb.from('push_subscriptions').delete().eq('id', s.id);
-            pruned++;
-          } else {
-            console.error('push failed', code, (e as Error).message);
-          }
-        }
-      }),
+    await sendToHousehold(
+      sb,
+      ev.household_id,
+      {
+        title: ev.title,
+        body: [whenText(ev.starts_at, now), ev.place].filter(Boolean).join(' · '),
+        url: '/agenda',
+        tag: `event-${ev.event_id}`,
+      },
+      stats,
     );
   }
 
-  return json({ events, sent, pruned });
+  // 2) Pendientes que vencen hoy (o antes)
+  const { data: dueItems } = await sb.rpc('due_item_reminders');
+  for (const h of dueItems ?? []) {
+    const { data: claimed } = await sb
+      .from('items')
+      .update({ due_reminded_at: new Date().toISOString() })
+      .in('id', h.item_ids)
+      .is('due_reminded_at', null)
+      .is('done_at', null)
+      .select('title');
+    const titles = (claimed ?? []).map((r: { title: string }) => r.title);
+    if (titles.length === 0) continue;
+    dueHouseholds++;
+    await sendToHousehold(
+      sb,
+      h.household_id,
+      {
+        title: titles.length === 1 ? 'Pendiente para hoy' : `${titles.length} pendientes para hoy`,
+        body: listText(titles),
+        url: '/pendientes',
+        tag: `due-${new Date().toISOString().slice(0, 10)}`,
+      },
+      stats,
+    );
+  }
+
+  return json({ events, dueHouseholds, ...stats });
 });

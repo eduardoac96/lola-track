@@ -263,6 +263,7 @@ export type Database = {
           done_at: string | null;
           done_by: string | null;
           due_date: string | null;
+          due_reminded_at: string | null;
           household_id: string;
           id: string;
           link_url: string | null;
@@ -283,6 +284,7 @@ export type Database = {
           done_at?: string | null;
           done_by?: string | null;
           due_date?: string | null;
+          due_reminded_at?: string | null;
           household_id: string;
           id?: string;
           link_url?: string | null;
@@ -303,6 +305,7 @@ export type Database = {
           done_at?: string | null;
           done_by?: string | null;
           due_date?: string | null;
+          due_reminded_at?: string | null;
           household_id?: string;
           id?: string;
           link_url?: string | null;

@@ -37,7 +37,7 @@ function AmountForm({ mode, budgetName, onClose, onConfirm }: AmountProps & { mo
   const pesos = Number(digits) || 0;
   const cents = pesos * 100;
   const rest = mode === 'restar';
-  const color = !pesos ? '#B3B0C4' : rest ? '#A61E25' : '#1E6B4A';
+  const color = !pesos ? 'var(--color-disabled)' : rest ? 'var(--color-gasto)' : 'var(--color-abono)';
 
   return (
     <Sheet
@@ -81,7 +81,7 @@ function AmountForm({ mode, budgetName, onClose, onConfirm }: AmountProps & { mo
               key={c}
               type="button"
               onClick={() => setDigits((d) => addChip(d, c))}
-              className="h-11 rounded-xl border border-[#E2DFEC] bg-card text-[14px] font-extrabold text-primary-hover"
+              className="h-11 rounded-xl border border-field-line bg-card text-[14px] font-extrabold text-primary-hover"
             >
               +{c.toLocaleString('es-MX')}
             </button>
@@ -94,7 +94,7 @@ function AmountForm({ mode, budgetName, onClose, onConfirm }: AmountProps & { mo
               type="button"
               aria-label={k === 'del' ? 'Borrar' : k}
               onClick={() => setDigits((d) => pressKey(d, k))}
-              className="h-[52px] rounded-[14px] bg-[#F1EFF7] text-[22px] font-bold text-ink active:bg-[#E4E0FF]"
+              className="h-[52px] rounded-[14px] bg-soft text-[22px] font-bold text-ink active:bg-dashed"
             >
               {k === 'del' ? '⌫' : k}
             </button>

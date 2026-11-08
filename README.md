@@ -17,15 +17,17 @@ npm run dev               # http://localhost:5173
 ```
 
 - Vista previa de pantallas con datos de ejemplo, sin login ni backend: `http://localhost:5173/preview.html?screen=now|items|agenda|budget|login|onboarding`
-- `npm test` · `npm run build` · `npm run lint`
+- `npm test` · `npm run build` · `npm run lint` · `npm run e2e` (Playwright; `CHROME_PATH=/ruta/chrome` si no instalaste sus navegadores)
 
 ## Pendientes manuales (requieren tus cuentas)
 
-1. **T02b · Email OTP**: Supabase → Authentication → Email Templates → _Magic Link_: usa `{{ .Token }}` en el cuerpo (código de 6 dígitos). Sin esto llega un link y el login por código no funciona.
-2. **T11 · Deploy**: Cloudflare Pages desde este repo (build `npm run build`, salida `dist`, variables `VITE_*`). Luego Site URL en Supabase Auth.
-3. **T15b · Avisos**: `npx web-push generate-vapid-keys` → secrets `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT` en Supabase y `VITE_VAPID_PUBLIC_KEY` en Cloudflare.
+1. **Correo con código (T02b)**: Supabase → Authentication → Email Templates → _Magic Link_ → en el cuerpo pon `{{ .Token }}` (ej. `Tu código para Lola Track: {{ .Token }}`). Sin esto llega un link y el login por código no funciona.
+2. **Publicar (T11)**: Cloudflare → Workers & Pages → Create → Pages → conectar `eduardoac96/lola-track`. Build `npm run build`, salida `dist`. Variables: copia las 3 de `.env.example`.
+3. **URL en Supabase**: Authentication → URL Configuration → _Site URL_ = la dirección que te dé Cloudflare.
+4. **En cada iPhone**: abrir la URL en Safari → Compartir → _Agregar a pantalla de inicio_ → abrir Lola desde el ícono → tocar los avatares → _Activar avisos_.
 
 ## Backend (ya configurado en `xkiumlisdkxwqlvuqneg`)
 
-- 4 migraciones aplicadas (`supabase/migrations/`), RLS verificado.
-- Edge Function `send-reminders` + pg_cron `lola-send-reminders` (cada 5 min, secreto en Vault `lola_cron_secret`).
+- 5 migraciones aplicadas (`supabase/migrations/`), RLS verificado.
+- Llaves VAPID y secreto del cron en Vault (nada que configurar a mano).
+- Edge Function `send-reminders` + pg_cron `lola-send-reminders` (cada 5 min): avisos de eventos y de pendientes con fecha.

@@ -41,7 +41,7 @@ export function ItemCard({ item, onToggle, onOpen }: { item: Item; onToggle: () 
         aria-label={done ? `Marcar "${item.title}" como pendiente` : `Marcar "${item.title}" como hecho`}
         aria-pressed={done}
         className={`flex size-11 shrink-0 items-center justify-center rounded-full border-2 text-white ${
-          done ? 'border-abono bg-abono' : 'border-[#D6D3E3] bg-card'
+          done ? 'border-done bg-done' : 'border-check bg-card'
         }`}
       >
         {done && (

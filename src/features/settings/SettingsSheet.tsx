@@ -6,6 +6,7 @@ import { disablePush, enablePush, getPushState, type PushState } from '../../lib
 import { Sheet } from '../../ui/Sheet';
 import { Icon } from '../../ui/Icon';
 import { Avatar, GhostButton, PrimaryButton } from '../../ui/kit';
+import { ChecklistButton } from '../items/ChecklistButton';
 
 const PUSH_COPY: Record<PushState, string> = {
   on: 'Avisos activados en este dispositivo.',
@@ -101,6 +102,14 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             </PrimaryButton>
           )}
           {pushError && <p className="m-0 text-[13px] font-semibold text-gasto">{pushError}</p>}
+        </section>
+
+        <section className="flex flex-col gap-3 rounded-[var(--radius-card)] bg-bg p-4">
+          <h3 className="m-0 text-[15px] font-extrabold">Checklist de llegada</h3>
+          <p className="m-0 text-[13px] font-medium text-muted">
+            Agrega los pendientes sugeridos que todavía no tienes. No duplica.
+          </p>
+          <ChecklistButton tone="ink" />
         </section>
 
         <div className="flex flex-col items-center gap-1">

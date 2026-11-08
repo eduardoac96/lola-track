@@ -52,13 +52,13 @@ export function QuickAdd({ onCreated, autoFocus }: { onCreated?: () => void; aut
           enterKeyHint="done"
           autoFocus={autoFocus}
           data-autofocus={autoFocus ? '' : undefined}
-          className="h-11 min-w-0 flex-1 border-none bg-transparent text-[16px] font-semibold text-ink outline-none placeholder:text-[#8A879C]"
+          className="h-11 min-w-0 flex-1 border-none bg-transparent text-[16px] font-semibold text-ink outline-none placeholder:text-placeholder"
         />
         <button
           type="submit"
           aria-label="Agregar"
           disabled={!parsed.valid}
-          className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-primary text-white disabled:bg-[#B3B0C4]"
+          className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-primary text-white disabled:bg-disabled"
         >
           <Icon name="plus" size={22} stroke={2.6} />
         </button>
@@ -69,18 +69,18 @@ export function QuickAdd({ onCreated, autoFocus }: { onCreated?: () => void; aut
             {TYPES[parsed.type].label}
           </Chip>
           {prio && (
-            <Chip bg="#FFFFFF" fg="#1C1A2B">
+            <Chip bg="var(--color-card)" fg="var(--color-ink)">
               <span className="size-2 rounded-full" style={{ background: prio.dot }} />
               {prio.label}
             </Chip>
           )}
           {parsed.priceCents != null && (
-            <Chip bg="#E9E6FD" fg="#4535B8">
+            <Chip bg="var(--color-compra-tint)" fg="var(--color-compra-fg)">
               {fmtMXN(parsed.priceCents)}
             </Chip>
           )}
           {parsed.area && (
-            <Chip bg="#FFFFFF" fg="#1C1A2B">
+            <Chip bg="var(--color-card)" fg="var(--color-ink)">
               @{parsed.area}
             </Chip>
           )}

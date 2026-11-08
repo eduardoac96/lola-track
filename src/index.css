@@ -29,9 +29,63 @@
   --color-abono: #1e6b4a;
   --color-abono-tint: #e3f4ec;
 
+  --color-soft: #f1eff7;
+  --color-track: #e9e7f2;
+  --color-field: #f8f7fc;
+  --color-field-line: #e2dfec;
+  --color-line-soft: #f0eef6;
+  --color-dashed: #c9c4e8;
+  --color-check: #d6d3e3;
+  --color-disabled: #b3b0c4;
+  --color-hero: #1c1a2b;
+  --color-on-hero: #d9d6ea;
+  --color-placeholder: #8a879c;
+  --color-done: #1e6b4a;
+  --color-danger: #b4232a;
+
   --radius-card: 18px;
   --radius-hero: 26px;
   --radius-sheet: 28px;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+/* Modo oscuro: mismos tokens, otros valores (Tailwind v4 lee las variables en runtime). */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #121019;
+    --color-card: #1c1a28;
+    --color-line: #2c2939;
+    --color-ink: #f2f0fa;
+    --color-muted: #a9a6bd;
+    --color-primary-hover: #a99cff;
+    --color-soft: #262335;
+    --color-track: #262335;
+    --color-field: #1f1c2c;
+    --color-field-line: #343046;
+    --color-line-soft: #262335;
+    --color-dashed: #4a4566;
+    --color-check: #4a4566;
+    --color-disabled: #4a4760;
+    --color-hero: #2a2640;
+    --color-placeholder: #7d7a92;
+    --color-compra-tint: #2c2752;
+    --color-compra-fg: #c3baff;
+    --color-arreglo-tint: #3a2c12;
+    --color-arreglo-fg: #f2c46b;
+    --color-tarea-tint: #15342a;
+    --color-tarea-fg: #7dd3a8;
+    --color-gasto: #ff8a8f;
+    --color-gasto-tint: #3c1b20;
+    --color-abono: #7dd3a8;
+    --color-abono-tint: #15342a;
+  }
+}
+
+a {
+  color: var(--color-primary-hover);
 }
 
 html,

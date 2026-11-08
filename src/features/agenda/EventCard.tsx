@@ -52,7 +52,7 @@ export function EventRow({ ev, onOpen, now = new Date() }: { ev: CalEvent; onOpe
       className="flex w-full items-center gap-3.5 rounded-[var(--radius-card)] border border-line bg-card px-4 py-3 text-left"
     >
       <span className="flex w-14 shrink-0 flex-col items-center">
-        <span className={`text-[11px] font-extrabold ${chip === 'HOY' ? 'text-[#B4232A]' : 'text-muted'}`}>{chip}</span>
+        <span className={`text-[11px] font-extrabold ${chip === 'HOY' ? 'text-gasto' : 'text-muted'}`}>{chip}</span>
         <span className="text-[17px] font-extrabold">{fmtTime(start)}</span>
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">

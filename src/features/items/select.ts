@@ -12,9 +12,9 @@ export const PRIORITIES: ReadonlyArray<{ value: ItemPriority; label: string; dot
 ];
 
 export const TYPES: Record<ItemType, { label: string; tint: string; fg: string; icon: IconName }> = {
-  compra: { label: 'Compra', tint: '#E9E6FD', fg: '#4535B8', icon: 'compra' },
-  arreglo: { label: 'Arreglo', tint: '#FFF4DE', fg: '#8A5300', icon: 'arreglo' },
-  tarea: { label: 'Tarea', tint: '#E3F4EC', fg: '#1E6B4A', icon: 'tarea' },
+  compra: { label: 'Compra', tint: 'var(--color-compra-tint)', fg: 'var(--color-compra-fg)', icon: 'compra' },
+  arreglo: { label: 'Arreglo', tint: 'var(--color-arreglo-tint)', fg: 'var(--color-arreglo-fg)', icon: 'arreglo' },
+  tarea: { label: 'Tarea', tint: 'var(--color-tarea-tint)', fg: 'var(--color-tarea-fg)', icon: 'tarea' },
 };
 
 export const isDone = (i: Pick<Item, 'done_at'>): boolean => i.done_at != null;

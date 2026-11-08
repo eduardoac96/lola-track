@@ -46,14 +46,14 @@ export function Sheet({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-ink/45 animate-[fade_.15s_ease-out]" onClick={onClose} aria-hidden="true" />
+    <div className="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:p-6">
+      <div className="absolute inset-0 bg-black/50 animate-[fade_.15s_ease-out]" onClick={onClose} aria-hidden="true" />
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[var(--radius-sheet)] bg-card shadow-2xl animate-[sheet_.2s_ease-out]"
+        className="relative mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[var(--radius-sheet)] bg-card shadow-2xl md:rounded-[var(--radius-sheet)] animate-[sheet_.2s_ease-out]"
         style={{ transform: dragY ? `translateY(${dragY}px)` : undefined, transition: dragY ? 'none' : undefined }}
       >
         <div
@@ -82,7 +82,7 @@ export function Sheet({
               type="button"
               onClick={onClose}
               aria-label="Cerrar"
-              className="flex size-11 items-center justify-center rounded-full bg-[#F1EFF7] text-ink"
+              className="flex size-11 items-center justify-center rounded-full bg-soft text-ink"
             >
               <Icon name="close" size={18} stroke={2.6} />
             </button>

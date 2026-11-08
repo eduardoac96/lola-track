@@ -88,7 +88,7 @@ export function BudgetScreen() {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="h-10 shrink-0 rounded-full border-2 border-dashed border-[#C9C4E8] px-3.5 text-[14px] font-bold text-primary-hover"
+            className="h-10 shrink-0 rounded-full border-2 border-dashed border-dashed px-3.5 text-[14px] font-bold text-primary-hover"
           >
             + Nueva bolsa
           </button>
@@ -97,49 +97,51 @@ export function BudgetScreen() {
 
       {balances.isLoading && <Spinner />}
       {current && (
-        <>
-          <section className="flex flex-col gap-3 rounded-[var(--radius-hero)] bg-ink px-5 py-5 text-white">
-            <span className="text-[13px] font-semibold text-[#D9D6EA]">Disponible en {current.name}</span>
-            <span
-              className={`text-[44px] leading-none font-extrabold tracking-tight ${negative ? 'text-[#FF8A8F]' : ''}`}
-            >
-              {fmtMXN(current.available_cents)}
-            </span>
-            <div
-              className="h-3 overflow-hidden rounded-full bg-white/15"
-              role="progressbar"
-              aria-label="Gastado del total aportado"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(spentPct)}
-            >
-              <div className="h-3 rounded-full bg-prio-pronto transition-[width]" style={{ width: `${spentPct}%` }} />
-            </div>
-            <div className="flex justify-between text-[12px] font-semibold text-[#D9D6EA]">
-              <span>Gastado {fmtMXN(current.spent_cents)}</span>
-              <span>Aportado {fmtMXN(current.added_cents)}</span>
-            </div>
-          </section>
+        <div className="contents md:grid md:grid-cols-2 md:items-start md:gap-x-10">
+          <div className="contents md:flex md:flex-col md:gap-4">
+            <section className="flex flex-col gap-3 rounded-[var(--radius-hero)] bg-hero px-5 py-5 text-white">
+              <span className="text-[13px] font-semibold text-on-hero">Disponible en {current.name}</span>
+              <span
+                className={`text-[44px] leading-none font-extrabold tracking-tight ${negative ? 'text-[#FF8A8F]' : ''}`}
+              >
+                {fmtMXN(current.available_cents)}
+              </span>
+              <div
+                className="h-3 overflow-hidden rounded-full bg-white/15"
+                role="progressbar"
+                aria-label="Gastado del total aportado"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(spentPct)}
+              >
+                <div className="h-3 rounded-full bg-prio-pronto transition-[width]" style={{ width: `${spentPct}%` }} />
+              </div>
+              <div className="flex justify-between text-[12px] font-semibold text-on-hero">
+                <span>Gastado {fmtMXN(current.spent_cents)}</span>
+                <span>Aportado {fmtMXN(current.added_cents)}</span>
+              </div>
+            </section>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => setMode('restar')}
-              className="flex h-[68px] items-center justify-center gap-2.5 rounded-[20px] bg-gasto-tint text-[18px] font-extrabold text-gasto"
-            >
-              <Icon name="minus" size={26} stroke={2.8} /> Gasté
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('sumar')}
-              className="flex h-[68px] items-center justify-center gap-2.5 rounded-[20px] bg-abono-tint text-[18px] font-extrabold text-abono"
-            >
-              <Icon name="plus" size={26} stroke={2.8} /> Agregué
-            </button>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setMode('restar')}
+                className="flex h-[68px] items-center justify-center gap-2.5 rounded-[20px] bg-gasto-tint text-[18px] font-extrabold text-gasto"
+              >
+                <Icon name="minus" size={26} stroke={2.8} /> Gasté
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('sumar')}
+                className="flex h-[68px] items-center justify-center gap-2.5 rounded-[20px] bg-abono-tint text-[18px] font-extrabold text-abono"
+              >
+                <Icon name="plus" size={26} stroke={2.8} /> Agregué
+              </button>
+            </div>
           </div>
 
           <section className="flex flex-col gap-2">
-            <h2 className="m-0 mt-1 text-[18px] font-extrabold">Movimientos</h2>
+            <h2 className="m-0 mt-1 text-[18px] font-extrabold md:mt-0">Movimientos</h2>
             {movs.length === 0 ? (
               <EmptyCard>Sin movimientos todavía.</EmptyCard>
             ) : (
@@ -161,7 +163,7 @@ export function BudgetScreen() {
               </p>
             )}
           </section>
-        </>
+        </div>
       )}
 
       <AmountSheet
@@ -211,13 +213,13 @@ function MovementRow({
 
   return (
     <li className="relative" onKeyDown={(e) => (e.key === 'Delete' || e.key === 'Backspace') && onDelete()}>
-      <div className="absolute inset-0 flex items-center justify-end bg-[#B4232A] pr-5 text-white" aria-hidden="true">
+      <div className="absolute inset-0 flex items-center justify-end bg-danger pr-5 text-white" aria-hidden="true">
         <Icon name="trash" size={20} />
       </div>
       <div
         tabIndex={0}
         aria-label={`${m.concept ?? 'Movimiento'} ${fmtMXN(m.amount_cents, 'always')}. Suprimir para eliminar.`}
-        className={`relative flex touch-pan-y items-center gap-3 bg-card px-3.5 py-3 ${last ? '' : 'border-b border-[#F0EEF6]'}`}
+        className={`relative flex touch-pan-y items-center gap-3 bg-card px-3.5 py-3 ${last ? '' : 'border-b border-line-soft'}`}
         style={{ transform: `translateX(${dx}px)`, transition: dragging ? 'none' : 'transform .2s' }}
         onPointerDown={(e) => {
           start.current = { x: e.clientX, y: e.clientY };

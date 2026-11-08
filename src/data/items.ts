@@ -45,6 +45,7 @@ export function useCreateItem(hid: string, userId: string) {
         done_at: null,
         done_by: null,
         due_date: null,
+        due_reminded_at: null,
         link_url: null,
         notes: null,
         photo_path: null,
@@ -158,3 +159,20 @@ export function useReopenItem(hid: string) {
 }
 
 export { newId };
+
+/** Inserción en lote (checklist sugerido). Un solo request; Realtime lo propaga a la pareja. */
+export function useBulkCreateItems(hid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rows: Array<Omit<TablesInsert<'items'>, 'household_id'>>) => {
+      if (rows.length === 0) return [] as Item[];
+      const { data, error } = await supabase()
+        .from('items')
+        .insert(rows.map((r) => ({ ...r, id: r.id ?? newId(), household_id: hid })))
+        .select();
+      if (error) throw error;
+      return data ?? [];
+    },
+    onSuccess: (rows) => rows.forEach((r) => upsertInList(qc, keys.items(hid), r)),
+  });
+}

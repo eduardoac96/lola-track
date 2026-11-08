@@ -6,7 +6,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createQueryClient } from '../lib/queryClient';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { AppContext, type AppCtx } from '../app/context';
 import { keys } from '../data/cache';
 import type { Item } from '../data/items';
@@ -46,6 +46,7 @@ const it = (p: Partial<Item>): Item => ({
   price_estimated_cents: null,
   price_actual_cents: null,
   due_date: null,
+  due_reminded_at: null,
   link_url: null,
   notes: null,
   photo_path: null,
@@ -174,7 +175,7 @@ const ctx: AppCtx = {
 
 const screen = new URLSearchParams(location.search).get('screen') ?? 'now';
 const paths: Record<string, string> = { now: '/', items: '/pendientes', agenda: '/agenda', budget: '/presupuesto' };
-const Screen = { now: NowScreen, items: ItemsScreen, agenda: AgendaScreen, budget: BudgetScreen }[screen];
+const isApp = screen in paths;
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -183,12 +184,19 @@ createRoot(document.getElementById('root')!).render(
         <MemoryRouter initialEntries={[paths[screen] ?? '/']}>
           {screen === 'login' && <LoginScreen />}
           {screen === 'onboarding' && <OnboardingScreen userId={ME} email="odin@example.com" />}
-          {Screen && (
+          {isApp && (
             <AppContext.Provider value={ctx}>
-              <div className="mx-auto min-h-dvh max-w-lg px-5 pt-7 pb-[170px]">
-                <Screen />
+              <div className="md:pl-24">
+                <div className="mx-auto min-h-dvh max-w-lg px-5 pt-7 pb-[170px] md:max-w-5xl md:px-10 md:pt-10 md:pb-24">
+                  <Routes>
+                    <Route path="/" element={<NowScreen />} />
+                    <Route path="/pendientes" element={<ItemsScreen />} />
+                    <Route path="/agenda" element={<AgendaScreen />} />
+                    <Route path="/presupuesto" element={<BudgetScreen />} />
+                  </Routes>
+                </div>
               </div>
-              {screen !== 'budget' && <Fab label="Agregar pendiente" onClick={() => {}} />}
+              <Fab label="Agregar pendiente" onClick={() => {}} />
               <TabBar />
             </AppContext.Provider>
           )}

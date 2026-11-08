@@ -73,14 +73,16 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
 
   return (
     <AppContext.Provider value={ctx}>
-      <div className="mx-auto min-h-dvh max-w-lg px-5 pt-[max(28px,env(safe-area-inset-top))] pb-[calc(170px+env(safe-area-inset-bottom))]">
-        <Routes>
-          <Route path="/" element={<NowScreen />} />
-          <Route path="/pendientes" element={<ItemsScreen />} />
-          <Route path="/agenda" element={<AgendaScreen />} />
-          <Route path="/presupuesto" element={<BudgetScreen />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+      <div className="md:pl-24">
+        <div className="mx-auto min-h-dvh max-w-lg px-5 pt-[max(28px,env(safe-area-inset-top))] pb-[calc(170px+env(safe-area-inset-bottom))] md:max-w-5xl md:px-10 md:pt-10 md:pb-24">
+          <Routes>
+            <Route path="/" element={<NowScreen />} />
+            <Route path="/pendientes" element={<ItemsScreen />} />
+            <Route path="/agenda" element={<AgendaScreen />} />
+            <Route path="/presupuesto" element={<BudgetScreen />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </div>
       {showFab && <Fab label="Agregar pendiente" onClick={() => setQuickAdd(true)} />}
       <Sheet open={quickAdd} onClose={() => setQuickAdd(false)} title="Nuevo pendiente">

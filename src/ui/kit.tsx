@@ -43,7 +43,7 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="grid gap-1 rounded-[14px] bg-[#E9E7F2] p-1"
+      className="grid gap-1 rounded-[14px] bg-track p-1"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((o) => {
@@ -56,7 +56,7 @@ export function Segmented<T extends string>({
             aria-checked={on}
             onClick={() => onChange(o.value)}
             className={`rounded-[11px] font-bold transition-colors ${size === 'sm' ? 'h-10 text-[13px]' : 'h-11 text-[14px]'} ${
-              on ? 'bg-card text-ink shadow-[0_2px_6px_rgba(28,26,43,0.10)]' : 'text-[#5E5B73]'
+              on ? 'bg-card text-ink shadow-[0_2px_6px_rgba(28,26,43,0.10)]' : 'text-muted'
             }`}
           >
             {o.label}
@@ -79,7 +79,7 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 }
 
 export const inputCls =
-  'h-12 w-full rounded-[14px] border border-[#E2DFEC] bg-[#F8F7FC] px-3.5 text-[16px] font-semibold text-ink outline-none focus:border-primary focus:bg-card';
+  'h-12 w-full rounded-[14px] border border-field-line bg-field px-3.5 text-[16px] font-semibold text-ink outline-none focus:border-primary focus:bg-card';
 
 /* ───────── Buttons */
 export function PrimaryButton({
@@ -95,13 +95,13 @@ export function PrimaryButton({
   type?: 'button' | 'submit';
   tone?: 'primary' | 'gasto' | 'abono' | 'ink';
 }) {
-  const bg = { primary: 'bg-primary', gasto: 'bg-[#B4232A]', abono: 'bg-abono', ink: 'bg-ink' }[tone];
+  const bg = { primary: 'bg-primary', gasto: 'bg-danger', abono: 'bg-done', ink: 'bg-hero' }[tone];
   return (
     <button
       type={type}
       disabled={disabled}
       onClick={onClick}
-      className={`h-14 w-full rounded-[18px] text-[17px] font-extrabold text-white transition-opacity disabled:bg-[#B3B0C4] ${bg}`}
+      className={`h-14 w-full rounded-[18px] text-[17px] font-extrabold text-white transition-opacity disabled:bg-disabled ${bg}`}
     >
       {children}
     </button>
@@ -175,10 +175,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-[104px] z-[60] flex justify-center px-4"
+        className="pointer-events-none fixed inset-x-0 bottom-[104px] z-[60] md:bottom-8 md:pl-24 flex justify-center px-4"
       >
         {msg && (
-          <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl bg-ink py-2 pr-2 pl-4 text-[14px] font-semibold text-white shadow-xl">
+          <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl bg-hero py-2 pr-2 pl-4 text-[14px] font-semibold text-white shadow-xl">
             <span>{msg.text}</span>
             {msg.action && (
               <button
@@ -206,7 +206,7 @@ export function Fab({ onClick, label }: { onClick: () => void; label: string }) 
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="fixed right-5 bottom-[calc(96px+env(safe-area-inset-bottom))] z-30 flex size-15 items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(91,71,224,0.35)] active:scale-95"
+      className="fixed right-5 bottom-[calc(96px+env(safe-area-inset-bottom))] md:right-8 md:bottom-8 z-30 flex size-15 items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(91,71,224,0.35)] active:scale-95"
     >
       <Icon name="plus" size={26} stroke={2.6} />
     </button>

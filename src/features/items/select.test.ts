@@ -16,6 +16,7 @@ function item(p: Partial<Item>): Item {
     price_estimated_cents: null,
     price_actual_cents: null,
     due_date: null,
+    due_reminded_at: null,
     link_url: null,
     notes: null,
     photo_path: null,
