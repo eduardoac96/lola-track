@@ -30,9 +30,15 @@ const AREA_QUOTED_RE = /(^|\s)@"([^"]{1,40})"/;
 const AREA_RE = /(^|\s)@([^\s@#!$"]{1,40})/;
 
 const PRIO_MAP: Record<string, ItemPriority> = {
-  urgente: 'urgente', u: 'urgente',
-  pronto: 'pronto', p: 'pronto',
-  a: 'algun_dia', algun: 'algun_dia', algundia: 'algun_dia', algun_dia: 'algun_dia', 'algun dia': 'algun_dia',
+  urgente: 'urgente',
+  u: 'urgente',
+  pronto: 'pronto',
+  p: 'pronto',
+  a: 'algun_dia',
+  algun: 'algun_dia',
+  algundia: 'algun_dia',
+  algun_dia: 'algun_dia',
+  'algun dia': 'algun_dia',
 };
 
 export function parseQuickAdd(input: string): QuickAddResult {
@@ -56,16 +62,16 @@ export function parseQuickAdd(input: string): QuickAddResult {
 
   const price = take(PRICE_RE);
   if (price) {
-    const whole = Number(price[2].replace(/[ ,]/g, ''));
+    const whole = Number((price[2] ?? '').replace(/[ ,]/g, ''));
     const frac = price[3] ? Number(price[3].padEnd(2, '0')) : 0;
     if (Number.isFinite(whole)) priceCents = whole * 100 + frac;
   }
 
   const prio = take(PRIO_RE);
-  if (prio) priority = PRIO_MAP[prio[2].toLowerCase()] ?? 'pronto';
+  if (prio) priority = PRIO_MAP[(prio[2] ?? '').toLowerCase()] ?? 'pronto';
 
   const type = take(TYPE_RE);
-  if (type) explicitType = type[2].toLowerCase() as ItemType;
+  if (type) explicitType = (type[2] ?? 'tarea').toLowerCase() as ItemType;
 
   const areaQ = take(AREA_QUOTED_RE);
   if (areaQ) {
@@ -93,7 +99,7 @@ function mapIndex(s: string, strippedIdx: number): number {
   let count = 0;
   for (let i = 0; i < s.length; i++) {
     if (count === strippedIdx) return i;
-    count += stripAccents(s[i]).length;
+    count += stripAccents(s.charAt(i)).length;
   }
   return s.length;
 }

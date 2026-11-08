@@ -4,7 +4,12 @@ import { parseQuickAdd } from './quickAdd';
 describe('parseQuickAdd', () => {
   it('texto plano → tarea, prioridad pronto', () => {
     expect(parseQuickAdd('organizar clóset')).toEqual({
-      title: 'Organizar clóset', type: 'tarea', priority: 'pronto', area: null, priceCents: null, valid: true,
+      title: 'Organizar clóset',
+      type: 'tarea',
+      priority: 'pronto',
+      area: null,
+      priceCents: null,
+      valid: true,
     });
   });
 
@@ -43,7 +48,12 @@ describe('parseQuickAdd', () => {
 
   it('tokens en cualquier orden y en medio del título', () => {
     const r = parseQuickAdd('!urgente asegurar @sala muebles a la pared #arreglo');
-    expect(r).toMatchObject({ title: 'Asegurar muebles a la pared', area: 'sala', type: 'arreglo', priority: 'urgente' });
+    expect(r).toMatchObject({
+      title: 'Asegurar muebles a la pared',
+      area: 'sala',
+      type: 'arreglo',
+      priority: 'urgente',
+    });
   });
 
   it('no confunde símbolos dentro de palabras', () => {

@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+
+/* Tokens — spec §5 */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --color-bg: #f5f4fa;
+  --color-card: #ffffff;
+  --color-line: #eceaf3;
+  --color-ink: #1c1a2b;
+  --color-muted: #6b6880;
+
+  --color-primary: #5b47e0;
+  --color-primary-hover: #4535b8;
+
+  --color-prio-urgente: #e5484d;
+  --color-prio-pronto: #f5a524;
+  --color-prio-algun: #9c99b0;
+
+  --color-compra-tint: #e9e6fd;
+  --color-compra-fg: #4535b8;
+  --color-arreglo-tint: #fff4de;
+  --color-arreglo-fg: #8a5300;
+  --color-tarea-tint: #e3f4ec;
+  --color-tarea-fg: #1e6b4a;
+
+  --color-gasto: #a61e25;
+  --color-gasto-tint: #fde8e8;
+  --color-abono: #1e6b4a;
+  --color-abono-tint: #e3f4ec;
+
+  --radius-card: 18px;
+  --radius-hero: 26px;
+  --radius-sheet: 28px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}

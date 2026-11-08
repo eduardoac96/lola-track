@@ -9,6 +9,7 @@ Pendientes, agenda y presupuesto compartidos para el hogar. PWA para iPhone, iPa
 - Parser de captura rápida: [`src/lib/quickAdd.ts`](src/lib/quickAdd.ts)
 
 ## Arranque
+
 1. Crea un proyecto en Supabase → `supabase link` → `supabase db push`.
 2. Auth → Email: activa OTP y cambia la plantilla para que muestre `{{ .Token }}`.
 3. `cp .env.example .env` y llena `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.

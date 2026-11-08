@@ -3,9 +3,11 @@
 App personal (PWA) de pendientes, agenda y presupuesto para un hogar de 2 personas. Fuente de verdad: `specs/001-mvp/` (spec → plan → tasks). Si algo choca con el spec, el spec gana; si el spec está mal, propón el cambio en el PR.
 
 ## Stack
+
 Vite · React 19 · TypeScript strict · Tailwind v4 · TanStack Query · Supabase (Postgres, Auth OTP, Realtime, Storage, Edge Functions, pg_cron) · vite-plugin-pwa · Vitest · Playwright · Cloudflare Pages.
 
 ## Comandos
+
 ```
 npm run dev        # Vite
 npm test           # Vitest
@@ -16,6 +18,7 @@ supabase functions deploy send-reminders
 ```
 
 ## Reglas
+
 - **Dinero:** siempre `bigint` en centavos en la DB y `number` de centavos en TS. Nunca floats para montos. Formato solo con `fmtMXN` de `lib/money.ts`.
 - **Seguridad:** toda tabla nueva lleva `household_id`, RLS habilitado y políticas con `public.is_member(household_id)`. Las mutaciones con más de un paso van como RPC `security definer` con `set search_path = public` y validan `is_member`.
 - **Migraciones:** nunca editar una ya aplicada; crear una nueva `YYYYMMDDHHMMSS_desc.sql`.
