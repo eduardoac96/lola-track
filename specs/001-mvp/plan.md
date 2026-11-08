@@ -60,7 +60,7 @@ Migraciones en `supabase/migrations/` (init + hardening + grants), aplicadas al 
 
 ## 4. Decisiones clave y trampas conocidas
 
-1. **Email OTP, no magic link.** En iOS la PWA instalada tiene almacenamiento separado de Safari: el link abriría Safari y la sesión no llegaría a la PWA. Hay que configurar la plantilla de email de Supabase para enviar `{{ .Token }}`.
+1. **Correo + contraseña (no OTP).** El SMTP integrado de Supabase solo entrega a miembros del equipo y limita envíos; sin dominio propio no hay correo confiable. Contraseña en Llavero de iOS funciona igual dentro de la PWA. Supabase: _Confirm email_ desactivado; _Allow new users to sign up_ cerrado después de crear las dos cuentas.
 2. **Dinero en centavos `bigint`.** La UI solo maneja pesos enteros; convertir con `money.ts` (`toCents`, `fmtMXN`).
 3. **Saldo calculado, no almacenado.** Viene de la view `budget_balances`, así que no hay drift entre dos dispositivos.
 4. **Optimistic updates** en completar, crear, eliminar y movimientos, con rollback en `onError`. El eco de Realtime se deduplica por `id`.

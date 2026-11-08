@@ -105,3 +105,32 @@ test('agenda: crear evento para hoy', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Comprar pañales/ }).first()).toBeVisible();
   await expect(page.getByText('No se guardó')).toHaveCount(0);
 });
+
+test('login: contraseña incorrecta muestra error en español', async ({ page }) => {
+  await page.route('**/auth/v1/token**', (r) =>
+    r.fulfill({
+      status: 400,
+      json: { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' },
+    }),
+  );
+  await page.goto('/preview.html?screen=login');
+  await page.getByLabel('Correo').fill('odin@example.com');
+  await page.getByLabel('Contraseña', { exact: true }).fill('incorrecta');
+  await page.getByRole('button', { name: 'Entrar', exact: true }).last().click();
+  await expect(page.getByRole('alert')).toHaveText('Correo o contraseña incorrectos.');
+});
+
+test('login: crear cuenta exige 8 caracteres y avisa si falta desactivar Confirm email', async ({ page }) => {
+  await page.route('**/auth/v1/signup**', (r) =>
+    r.fulfill({ json: { id: 'u1', email: 'p@example.com', identities: [{ id: 'x' }] } }),
+  );
+  await page.goto('/preview.html?screen=login');
+  await page.getByRole('radio', { name: 'Crear cuenta' }).click();
+  await page.getByLabel('Correo').fill('p@example.com');
+  await page.getByLabel('Contraseña', { exact: true }).fill('corta');
+  const submit = page.getByRole('button', { name: 'Crear cuenta' }).last();
+  await expect(submit).toBeDisabled();
+  await page.getByLabel('Contraseña', { exact: true }).fill('suficiente123');
+  await submit.click();
+  await expect(page.getByRole('alert')).toContainText('Confirm email');
+});

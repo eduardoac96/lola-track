@@ -70,11 +70,13 @@ export function Segmented<T extends string>({
 /* ───────── Field */
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-bold text-muted">{label}</span>
-      {children}
+    <div className="flex flex-col gap-1.5">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[13px] font-bold text-muted">{label}</span>
+        {children}
+      </label>
       {hint && <span className="text-[12px] font-medium text-muted">{hint}</span>}
-    </label>
+    </div>
   );
 }
 

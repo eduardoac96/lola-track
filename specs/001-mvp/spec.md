@@ -19,7 +19,7 @@ Preparar la casa para la llegada de los niños genera decenas de compras, arregl
 
 ### Dentro (MVP = F0 + F1)
 
-- Hogar compartido: crear hogar, invitar a la pareja con un código, inicio de sesión con **código de 6 dígitos por correo**.
+- Hogar compartido: crear hogar, invitar a la pareja con un código, inicio de sesión con **correo + contraseña** (sin correos de confirmación).
 - Pendientes: crear, editar, completar, reabrir y eliminar; tipo, prioridad, área, precio estimado/real, link, nota, foto.
 - Presupuesto: bolsas, sumar/restar con teclado numérico y movimientos.
 - Vínculo compra ↔ presupuesto: al completar una compra se ofrece restarla de una bolsa.

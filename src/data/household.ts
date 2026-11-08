@@ -85,10 +85,16 @@ export function friendlyError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
   if (msg.includes('invalid or expired code')) return 'El código no es válido o ya expiró.';
   if (msg.includes('household is full')) return 'Este hogar ya está completo.';
-  if (msg.includes('Token has expired') || msg.includes('invalid')) return 'Código incorrecto o expirado.';
-  if (msg.includes('rate limit') || msg.includes('seconds')) return 'Espera unos segundos antes de pedir otro código.';
+  if (msg.includes('Invalid login credentials')) return 'Correo o contraseña incorrectos.';
+  if (msg.includes('already registered') || msg.includes('already been registered'))
+    return 'Ese correo ya tiene cuenta. Usa "Entrar".';
+  if (msg.includes('Email not confirmed'))
+    return 'La cuenta espera confirmación por correo. Hay que desactivar "Confirm email" en Supabase.';
+  if (msg.includes('Signups not allowed') || msg.includes('signups are disabled'))
+    return 'El registro de cuentas nuevas está cerrado.';
+  if (msg.includes('Password should') || msg.includes('weak_password'))
+    return 'La contraseña debe tener al menos 8 caracteres.';
+  if (msg.includes('rate limit') || msg.includes('seconds')) return 'Demasiados intentos. Espera un momento.';
   if (msg.includes('Failed to fetch')) return 'Sin conexión. Intenta de nuevo.';
-  if (msg.includes('not authorized') || msg.includes('not_authorized'))
-    return 'Ese correo aún no puede recibir códigos (falta configurar el envío de correos).';
   return 'Algo salió mal. Intenta de nuevo.';
 }

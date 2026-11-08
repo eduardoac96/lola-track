@@ -24,6 +24,7 @@ supabase functions deploy send-reminders
 - **Migraciones:** nunca editar una ya aplicada; crear una nueva `YYYYMMDDHHMMSS_desc.sql`.
 - **Datos:** un hook por recurso en `src/data/`. Optimistic update y rollback en `onError`. Realtime actualiza la cache y deduplica por `id`.
 - **UI:** objetivos táctiles ≥44 px, `aria-label` en botones de solo ícono, solo iconos SVG inline (sin emoji), textos en es-MX. Nada de formularios largos: lo opcional va detrás de "Más detalles".
-- **iOS:** sin magic links (OTP); permiso de push solo tras un gesto; respetar `env(safe-area-inset-*)`.
+- **Auth:** correo + contraseña (sin OTP ni magic links; ver spec H1). `autocomplete` correcto para el Llavero de iOS.
+- **iOS:** permiso de push solo tras un gesto; respetar `env(safe-area-inset-*)`.
 - **Alcance:** no implementar nada listado en "Fuera" del spec sin pedirlo.
 - **Done =** criterio de la tarea cumplido + `npm test` y `npm run build` en verde + tarea marcada en `tasks.md`.

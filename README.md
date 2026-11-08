@@ -23,8 +23,9 @@ npm run dev               # http://localhost:5173
 
 - ✅ Cloudflare Pages: https://lola-track.pages.dev (build `npm run build` → `dist`, Node 22; variables públicas en `.env.production`).
 - ✅ Supabase Auth Site URL = https://lola-track.pages.dev.
-- ⏳ **Correo (requiere tu cuenta)**: el SMTP integrado de Supabase solo envía a miembros del equipo de la organización y no permite editar plantillas. Configura un SMTP propio (p. ej. Brevo gratis) en Supabase → Authentication → Emails → SMTP Settings. Después se editan las plantillas _Magic link or OTP_ y _Confirm sign up_ para incluir `{{ .Token }}`.
-- Mientras tanto la app acepta el **link** del correo: tocarlo en la computadora, o copiarlo y pegarlo en la app del iPhone.
+- ✅ Login con correo + contraseña (no depende de enviar correos).
+- ⏳ Supabase → Authentication → Sign In / Providers: **desactivar "Confirm email"** (manual).
+- ⏳ Cuando ya existan las dos cuentas: **desactivar "Allow new users to sign up"** (manual).
 
 ## Backend (ya configurado en `xkiumlisdkxwqlvuqneg`)
 

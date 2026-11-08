@@ -1,63 +1,46 @@
 import { useState, type FormEvent } from 'react';
-import { parseEmailLink, requestOtp, verifyEmailLink, verifyOtp } from '../../data/session';
+import { MIN_PASSWORD, signIn, signUp } from '../../data/session';
 import { friendlyError } from '../../data/household';
-import { Field, PrimaryButton, inputCls } from '../../ui/kit';
+import { Field, PrimaryButton, Segmented, inputCls } from '../../ui/kit';
 
 /**
- * Login sin contraseña. El correo puede traer un código de 6 dígitos o un link:
- * - Código: se escribe aquí.
- * - Link: en la computadora basta tocarlo; en la app instalada del iPhone (que no comparte sesión
- *   con Safari) se copia el link y se pega aquí.
+ * Correo + contraseña. Sin correos de confirmación: el iPhone guarda la contraseña en el Llavero
+ * (autocomplete current-password / new-password) y funciona igual dentro de la app instalada.
  */
 export function LoginScreen() {
-  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
-  const [value, setValue] = useState('');
+  const [password, setPassword] = useState('');
+  const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const digits = value.replace(/\D/g, '');
-  const isLink = parseEmailLink(value) != null;
-  const ready = isLink || (digits.length === 6 && !/[a-z]/i.test(value));
+  const valid = email.includes('@') && password.length >= (mode === 'signup' ? MIN_PASSWORD : 1);
 
-  const sendCode = async (e?: FormEvent) => {
-    e?.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      await requestOtp(email.trim().toLowerCase());
-      setStep('code');
-    } catch (err) {
-      setError(friendlyError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const verify = async (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      if (isLink) await verifyEmailLink(value);
-      else await verifyOtp(email.trim().toLowerCase(), digits);
+      const mail = email.trim().toLowerCase();
+      if (mode === 'signin') await signIn(mail, password);
+      else {
+        const { needsConfirmation } = await signUp(mail, password);
+        if (needsConfirmation) {
+          setError(
+            'La cuenta quedó creada pero Supabase pide confirmarla por correo. Hay que desactivar "Confirm email".',
+          );
+          setBusy(false);
+        }
+      }
     } catch (err) {
-      setError(isLink ? 'El link no es válido o ya se usó. Pide uno nuevo y cópialo sin abrirlo.' : friendlyError(err));
+      setError(friendlyError(err));
       setBusy(false);
     }
   };
 
-  const paste = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text) setValue(text.trim());
-    } catch {
-      setError('No pude leer el portapapeles. Mantén presionado el campo y elige "Pegar".');
-    }
-  };
-
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-6 py-10">
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-7 px-6 py-10">
       <header className="flex flex-col gap-3">
         <img src="/icon-192.png" alt="" width={64} height={64} className="size-16 rounded-[20px]" />
         <h1 className="m-0 text-[32px] leading-tight font-extrabold tracking-tight">Lola Track</h1>
@@ -66,69 +49,75 @@ export function LoginScreen() {
         </p>
       </header>
 
-      {step === 'email' ? (
-        <form onSubmit={sendCode} className="flex flex-col gap-4">
-          <Field label="Tu correo">
-            <input
-              className={inputCls}
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@correo.com"
-            />
-          </Field>
-          <PrimaryButton type="submit" disabled={busy || !email.includes('@')}>
-            {busy ? 'Enviando…' : 'Enviarme un código'}
-          </PrimaryButton>
-        </form>
-      ) : (
-        <form onSubmit={verify} className="flex flex-col gap-4">
-          <p className="m-0 text-[14px] font-medium text-muted">
-            Te enviamos un correo a <b className="text-ink">{email}</b>. Si trae un <b>código</b>, escríbelo. Si trae un{' '}
-            <b>link</b>: en la computadora tócalo; en la app del iPhone mantén presionado el botón del correo, elige
-            “Copiar” y pégalo aquí.
-          </p>
-          <Field label="Código o link del correo" hint="Revisa también spam. Vence en unos minutos.">
-            <input
-              className={`${inputCls} ${isLink ? 'text-[14px]' : 'text-center text-[24px] tracking-[0.3em]'}`}
-              inputMode={isLink ? 'url' : 'numeric'}
-              autoComplete="one-time-code"
-              autoCapitalize="off"
-              autoCorrect="off"
-              required
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="123456"
-              data-autofocus
-            />
-          </Field>
-          <button
-            type="button"
-            onClick={paste}
-            className="-mt-2 h-11 self-start text-[14px] font-bold text-primary-hover"
-          >
-            Pegar del portapapeles
-          </button>
-          <PrimaryButton type="submit" disabled={busy || !ready}>
-            {busy ? 'Entrando…' : 'Entrar'}
-          </PrimaryButton>
-          <div className="flex justify-between text-[14px] font-bold">
-            <button type="button" className="h-11 text-primary-hover" onClick={() => setStep('email')}>
-              Cambiar correo
-            </button>
-            <button type="button" className="h-11 text-primary-hover" disabled={busy} onClick={() => sendCode()}>
-              Reenviar
-            </button>
-          </div>
-        </form>
-      )}
+      <Segmented
+        label="Entrar o crear cuenta"
+        value={mode}
+        onChange={(m) => {
+          setMode(m);
+          setError(null);
+        }}
+        options={[
+          { value: 'signin', label: 'Entrar' },
+          { value: 'signup', label: 'Crear cuenta' },
+        ]}
+      />
+
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <Field label="Correo">
+          <input
+            className={inputCls}
+            type="email"
+            name="email"
+            inputMode="email"
+            autoComplete="username"
+            autoCapitalize="off"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@correo.com"
+          />
+        </Field>
+        <Field
+          label="Contraseña"
+          hint={
+            mode === 'signup'
+              ? `Mínimo ${MIN_PASSWORD} caracteres. Tu iPhone puede sugerir una y guardarla.`
+              : undefined
+          }
+        >
+          <input
+            className={inputCls}
+            type={show ? 'text' : 'password'}
+            name="password"
+            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            minLength={mode === 'signup' ? MIN_PASSWORD : undefined}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </Field>
+        <button
+          type="button"
+          onClick={() => setShow((v) => !v)}
+          aria-pressed={show}
+          className="-mt-2 h-11 self-start text-[14px] font-bold text-primary-hover"
+        >
+          {show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        </button>
+        <PrimaryButton type="submit" disabled={busy || !valid}>
+          {busy ? 'Un momento…' : mode === 'signin' ? 'Entrar' : 'Crear cuenta'}
+        </PrimaryButton>
+      </form>
 
       {error && (
         <p role="alert" className="m-0 rounded-2xl bg-gasto-tint p-3 text-[14px] font-semibold text-gasto">
           {error}
+        </p>
+      )}
+
+      {mode === 'signin' && (
+        <p className="m-0 text-center text-[13px] font-medium text-muted">
+          ¿Olvidaste la contraseña? Pídele a quien administra Lola que la restablezca.
         </p>
       )}
     </main>

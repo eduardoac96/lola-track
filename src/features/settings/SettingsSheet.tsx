@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../../app/context';
 import { friendlyError, useCreateInvite } from '../../data/household';
-import { signOut } from '../../data/session';
+import { MIN_PASSWORD, changePassword, signOut } from '../../data/session';
 import { disablePush, enablePush, getPushState, type PushState } from '../../lib/push';
 import { Sheet } from '../../ui/Sheet';
 import { Icon } from '../../ui/Icon';
-import { Avatar, GhostButton, PrimaryButton } from '../../ui/kit';
+import { Avatar, Field, GhostButton, PrimaryButton, inputCls, useToast } from '../../ui/kit';
 import { ChecklistButton } from '../items/ChecklistButton';
 
 const PUSH_COPY: Record<PushState, string> = {
@@ -112,6 +112,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           <ChecklistButton tone="ink" />
         </section>
 
+        <PasswordSection />
+
         <div className="flex flex-col items-center gap-1">
           <span className="text-[12px] font-medium text-muted">{email}</span>
           <GhostButton danger onClick={() => signOut()}>
@@ -120,5 +122,52 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
         </div>
       </div>
     </Sheet>
+  );
+}
+
+function PasswordSection() {
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [pw, setPw] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!open) {
+    return <GhostButton onClick={() => setOpen(true)}>Cambiar mi contraseña</GhostButton>;
+  }
+  return (
+    <section className="flex flex-col gap-3 rounded-[var(--radius-card)] bg-bg p-4">
+      <Field label="Nueva contraseña" hint={`Mínimo ${MIN_PASSWORD} caracteres.`}>
+        <input
+          className={inputCls}
+          type="password"
+          autoComplete="new-password"
+          minLength={MIN_PASSWORD}
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+        />
+      </Field>
+      <PrimaryButton
+        tone="ink"
+        disabled={busy || pw.length < MIN_PASSWORD}
+        onClick={async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            await changePassword(pw);
+            toast({ text: 'Contraseña actualizada' });
+            setPw('');
+            setOpen(false);
+          } catch (e) {
+            setError(friendlyError(e));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? 'Guardando…' : 'Guardar contraseña'}
+      </PrimaryButton>
+      {error && <p className="m-0 text-[13px] font-semibold text-gasto">{error}</p>}
+    </section>
   );
 }
