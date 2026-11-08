@@ -110,8 +110,12 @@ export function friendlyError(e: unknown): string {
     return 'Ese correo ya tiene cuenta. Usa "Entrar".';
   if (msg.includes('Email not confirmed'))
     return 'La cuenta espera confirmación por correo. Hay que desactivar "Confirm email" en Supabase.';
-  if (msg.includes('Signups not allowed') || msg.includes('signups are disabled'))
-    return 'El registro de cuentas nuevas está cerrado.';
+  if (
+    msg.includes('Signups not allowed') ||
+    msg.includes('signups are disabled') ||
+    msg.includes('Database error saving new user')
+  )
+    return 'El registro de cuentas nuevas está cerrado. Pide acceso a quien administra Lola.';
   if (msg.includes('Password should') || msg.includes('weak_password'))
     return 'La contraseña debe tener al menos 8 caracteres.';
   if (msg.includes('rate limit') || msg.includes('seconds')) return 'Demasiados intentos. Espera un momento.';
