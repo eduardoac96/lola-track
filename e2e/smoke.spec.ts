@@ -174,7 +174,7 @@ test.describe('mejoras v1.1', () => {
     await expect(page.getByText('Lámpara de noche')).toHaveCount(0); // es compra
     await expect(page.getByText(/Arreglo/)).toHaveCount(0);
     await page.getByText('Asegurar muebles a la pared').click();
-    await expect(page.getByRole('radiogroup', { name: 'Tipo' }).getByRole('radio')).toHaveText(['Compra', 'Tarea']);
+    await expect(page.getByRole('radiogroup', { name: 'Tipo', exact: true }).getByRole('radio')).toHaveText(['Compra', 'Tarea']);
   });
 
   test('reordenar con teclado mueve el pendiente', async ({ page }) => {
