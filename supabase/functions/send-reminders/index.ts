@@ -2,6 +2,7 @@
 // pg_cron la llama cada 5 min con el header x-cron-secret (Vault: lola_cron_secret).
 // 1) Eventos con aviso vencido → un push por evento.
 // 2) Pendientes cuya fecha llegó (desde las 8:00) → un push por hogar con la lista.
+// 3) Domingo desde las 19:00 → resumen semanal por hogar (weekly_digests / last_weekly_digest).
 // Cada aviso se "reclama" antes de enviarse (reminded_at / due_reminded_at) para no duplicar.
 // Llaves VAPID: secrets de la función si existen; si no, Vault vía get_push_config().
 // Cada aviso lleva `badge` = urgentes sin hacer, para el número del ícono.
@@ -27,6 +28,19 @@ function listText(titles: string[]): string {
 }
 
 type Stats = { sent: number; pruned: number };
+
+const mxn = (cents: number) =>
+  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(cents / 100);
+
+export function digestText(d: { done_count: number; spent_cents: number; urgent_pending: number }): string | null {
+  if (d.done_count === 0 && d.spent_cents === 0 && d.urgent_pending === 0) return null;
+  const parts = [
+    d.done_count === 1 ? '1 pendiente hecho' : `${d.done_count} pendientes hechos`,
+    d.spent_cents > 0 ? `${mxn(d.spent_cents)} gastados` : null,
+    d.urgent_pending > 0 ? `${d.urgent_pending} urgente${d.urgent_pending === 1 ? '' : 's'} para la semana` : 'nada urgente',
+  ].filter(Boolean);
+  return `Esta semana: ${parts.join(', ')}.`;
+}
 
 /** Pendientes urgentes sin hacer → número del ícono de la app. */
 async function urgentCount(sb: SupabaseClient, householdId: string): Promise<number> {
@@ -147,5 +161,23 @@ Deno.serve(async (req) => {
     );
   }
 
-  return json({ events, dueHouseholds, ...stats });
+  // 3) Resumen semanal (domingo ≥ 19:00 Monterrey)
+  let digests = 0;
+  const { data: weekly } = await sb.rpc('weekly_digests');
+  for (const d of weekly ?? []) {
+    const { data: claimed } = await sb
+      .from('households')
+      .update({ last_weekly_digest: d.week })
+      .eq('id', d.household_id)
+      .or(`last_weekly_digest.is.null,last_weekly_digest.lt.${d.week}`)
+      .select('id')
+      .maybeSingle();
+    if (!claimed) continue;
+    const body = digestText(d);
+    if (!body) continue;
+    digests++;
+    await sendToHousehold(sb, d.household_id, { title: 'Resumen de la semana', body, url: '/', tag: `digest-${d.week}` }, stats);
+  }
+
+  return json({ events, dueHouseholds, digests, ...stats });
 });

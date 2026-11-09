@@ -27,6 +27,7 @@ export function ItemCard({
   onToggle,
   onOpen,
   onDelete,
+  onToggleUrgent,
   handle,
 }: {
   item: Item;
@@ -34,6 +35,8 @@ export function ItemCard({
   onOpen: () => void;
   /** Si viene, la tarjeta se puede deslizar a la izquierda para eliminar. */
   onDelete?: () => void;
+  /** Si viene, deslizar a la derecha marca/desmarca urgente. */
+  onToggleUrgent?: () => void;
   /** Asa de arrastre para reordenar (opcional). */
   handle?: ReactNode;
 }) {
@@ -71,7 +74,22 @@ export function ItemCard({
   );
   if (!onDelete) return card;
   return (
-    <SwipeRow onDelete={onDelete} label={item.title} className="rounded-[var(--radius-card)]">
+    <SwipeRow
+      onDelete={onDelete}
+      right={
+        onToggleUrgent && !done
+          ? {
+              label: item.priority === 'urgente' ? 'Quitar urgente' : 'Urgente',
+              icon: 'flag',
+              bg: item.priority === 'urgente' ? 'bg-[#6B6880]' : 'bg-[#E5484D]',
+              run: onToggleUrgent,
+              key: 'u',
+            }
+          : undefined
+      }
+      label={item.title}
+      className="rounded-[var(--radius-card)]"
+    >
       {card}
     </SwipeRow>
   );

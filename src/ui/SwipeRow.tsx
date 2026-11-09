@@ -1,21 +1,34 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { Icon } from './Icon';
+import { Icon, type IconName } from './Icon';
 
 const THRESHOLD = 96;
 
+export interface SwipeRightAction {
+  /** Texto corto que se ve al deslizar ("Urgente", "Quitar urgente"). */
+  label: string;
+  icon: IconName;
+  /** Clase de fondo (p. ej. bg-[#E5484D]). */
+  bg: string;
+  run: () => void;
+  /** Tecla equivalente para teclado (p. ej. "u"). */
+  key?: string;
+}
+
 /**
- * Desliza a la izquierda para eliminar. Solo se activa con gesto horizontal claro
- * (el scroll vertical no se toca) y cancela el click que termina un arrastre.
- * Teclado: Suprimir / Retroceso sobre la fila.
+ * Desliza a la izquierda para eliminar y, si se pasa `right`, a la derecha para otra acción.
+ * Solo se activa con gesto horizontal claro (el scroll vertical no se toca) y cancela el click
+ * que termina un arrastre. Teclado: Suprimir/Retroceso elimina; `right.key` ejecuta la acción derecha.
  */
 export function SwipeRow({
   children,
   onDelete,
+  right,
   label,
   className = '',
 }: {
   children: ReactNode;
   onDelete: () => void;
+  right?: SwipeRightAction;
   label: string;
   className?: string;
 }) {
@@ -32,8 +45,29 @@ export function SwipeRow({
     setDx(0);
   };
 
+  const hints = [
+    'Desliza a la izquierda o presiona Suprimir para eliminar',
+    right
+      ? `a la derecha${right.key ? ` o presiona ${right.key.toUpperCase()}` : ''} para ${right.label.toLowerCase()}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join('; ');
+
   return (
     <div className={`relative overflow-hidden ${className}`}>
+      {right && (
+        <div
+          aria-hidden="true"
+          className={`absolute inset-0 flex items-center justify-start gap-2 pl-5 text-[14px] font-bold text-white ${right.bg}`}
+          style={{ opacity: dx > 8 ? 1 : 0 }}
+        >
+          <span className="transition-transform" style={{ transform: dx > THRESHOLD ? 'scale(1.25)' : 'none' }}>
+            <Icon name={right.icon} size={20} />
+          </span>
+          {right.label}
+        </div>
+      )}
       <div
         aria-hidden="true"
         className="absolute inset-0 flex items-center justify-end gap-2 bg-danger pr-5 text-[14px] font-bold text-white"
@@ -46,12 +80,16 @@ export function SwipeRow({
       </div>
       <div
         tabIndex={0}
-        aria-label={`${label}. Desliza a la izquierda o presiona Suprimir para eliminar.`}
+        aria-label={`${label}. ${hints}.`}
         className="relative touch-pan-y"
         onKeyDown={(e) => {
-          if ((e.key === 'Delete' || e.key === 'Backspace') && e.target === e.currentTarget) {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === 'Delete' || e.key === 'Backspace') {
             e.preventDefault();
             onDelete();
+          } else if (right?.key && e.key.toLowerCase() === right.key) {
+            e.preventDefault();
+            right.run();
           }
         }}
         style={{ transform: `translateX(${dx}px)`, transition: dragging ? 'none' : 'transform .2s ease' }}
@@ -78,13 +116,15 @@ export function SwipeRow({
           }
           if (horizontal.current) {
             setDragging(true);
-            setDx(Math.min(0, ddx));
+            setDx(right ? Math.max(-200, Math.min(200, ddx)) : Math.min(0, ddx));
           }
         }}
         onPointerUp={() => {
-          const go = dx < -THRESHOLD;
+          const del = dx < -THRESHOLD;
+          const act = right && dx > THRESHOLD;
           reset();
-          if (go) onDelete();
+          if (del) onDelete();
+          else if (act) right.run();
         }}
         onPointerCancel={reset}
         onClickCapture={(e) => {

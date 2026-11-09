@@ -128,3 +128,45 @@ export function sortOrderAt(ordered: readonly Pick<Item, 'sort_order'>[], toInde
   if (next === undefined) return prev + 1000;
   return (prev + next) / 2;
 }
+
+export const groupDropId = (p: ItemPriority) => `group:${p}`;
+
+/**
+ * Resultado de soltar `activeId` sobre `overId` (otro pendiente o una sección "group:<prioridad>").
+ * `pendingByPriority`: pendientes visibles de cada prioridad, ya ordenados.
+ * Devuelve la nueva prioridad y sort_order, o null si no cambia nada.
+ */
+export function computeDrop(
+  pendingByPriority: Record<ItemPriority, readonly Item[]>,
+  activeId: string,
+  overId: string,
+): { priority: ItemPriority; sort_order: number } | null {
+  const all = Object.values(pendingByPriority).flat();
+  const active = all.find((i) => i.id === activeId);
+  if (!active || activeId === overId) return null;
+
+  let target: ItemPriority;
+  let index: number;
+  if (overId.startsWith('group:')) {
+    target = overId.slice(6) as ItemPriority;
+    const list = pendingByPriority[target].filter((i) => i.id !== activeId);
+    if (target === active.priority) return null; // soltar en su propia sección: sin cambio
+    index = list.length;
+    return { priority: target, sort_order: sortOrderAt(list, index) };
+  }
+
+  const over = all.find((i) => i.id === overId);
+  if (!over) return null;
+  target = over.priority;
+  const original = pendingByPriority[target];
+  const list = original.filter((i) => i.id !== activeId);
+  if (target === active.priority) {
+    const from = original.findIndex((i) => i.id === activeId);
+    const to = original.findIndex((i) => i.id === overId);
+    if (from === to) return null;
+    index = to; // arrayMove: el elemento queda en la posición del que estaba debajo
+  } else {
+    index = list.findIndex((i) => i.id === overId); // entra antes del pendiente sobre el que se suelta
+  }
+  return { priority: target, sort_order: sortOrderAt(list, index) };
+}

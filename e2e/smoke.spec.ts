@@ -136,17 +136,34 @@ test('login: crear cuenta exige 8 caracteres y avisa si falta desactivar Confirm
 });
 
 /** Arrastre horizontal con el mouse (Playwright no simula swipe táctil en Chromium de escritorio). */
-async function swipeLeft(page: Page, locator: ReturnType<Page['locator']>) {
+async function swipe(page: Page, locator: ReturnType<Page['locator']>, dir: -1 | 1) {
   await locator.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   const box = await locator.boundingBox();
   if (!box) throw new Error('sin caja');
   const y = box.y + box.height / 2;
-  const x0 = box.x + box.width * 0.55; // lejos del botón + flotante
+  const x0 = box.x + box.width * (dir < 0 ? 0.55 : 0.3); // lejos del botón + flotante
   await page.mouse.move(x0, y);
   await page.mouse.down();
-  for (let i = 1; i <= 10; i++) await page.mouse.move(x0 - i * 16, y);
+  for (let i = 1; i <= 10; i++) await page.mouse.move(x0 + dir * i * 16, y);
   await page.mouse.up();
 }
+const swipeLeft = (page: Page, l: ReturnType<Page['locator']>) => swipe(page, l, -1);
+
+/** PATCH a items responde con lo enviado (para mutaciones optimistas). */
+async function echoItemPatch(page: Page) {
+  await page.route('**/rest/v1/items*', (r) =>
+    r.request().method() === 'PATCH'
+      ? r.fulfill({
+          json: {
+            id: new URL(r.request().url()).searchParams.get('id')?.replace('eq.', ''),
+            ...(r.request().postDataJSON() as object),
+          },
+        })
+      : r.fallback(),
+  );
+}
+const sectionOf = (page: Page, name: RegExp) =>
+  page.locator('section').filter({ has: page.getByRole('heading', { name }) });
 
 test.describe('mejoras v1.1', () => {
   test.use({ hasTouch: false, isMobile: false });
@@ -195,7 +212,7 @@ test.describe('mejoras v1.1', () => {
     const urgentes = page.locator('section').filter({ has: page.getByRole('heading', { name: /Urgente/ }) });
     const titles = () => urgentes.locator('.truncate.text-\\[15px\\]').allInnerTexts();
     const before = await titles();
-    const handle = page.getByRole('button', { name: `Reordenar "${before[0]}"` });
+    const handle = page.getByRole('button', { name: `Mover "${before[0]}" (reordenar o cambiar de prioridad)` });
     await handle.focus();
     await page.keyboard.press('Space');
     await page.waitForTimeout(150);
@@ -203,6 +220,55 @@ test.describe('mejoras v1.1', () => {
     await page.waitForTimeout(250);
     await page.keyboard.press('Space');
     await expect.poll(titles).toEqual([before[1], before[0], ...before.slice(2)]);
+  });
+
+  test('deslizar a la derecha marca urgente y el pendiente cambia de sección', async ({ page }) => {
+    await echoItemPatch(page);
+    await page.goto('/preview.html?screen=items');
+    await swipe(page, page.getByLabel(/^Cambiador\. Desliza/), 1);
+    await expect(sectionOf(page, /Urgente/).getByText('Cambiador')).toBeVisible();
+    await expect(page.getByText(/→ Urgente/)).toBeVisible();
+    await page.getByRole('button', { name: 'Deshacer' }).click();
+    await expect(sectionOf(page, /Urgente/).getByText('Cambiador')).toHaveCount(0);
+  });
+
+  test('con teclado se puede llevar un pendiente a otra prioridad', async ({ page }) => {
+    await echoItemPatch(page);
+    await page.goto('/preview.html?screen=items');
+    const urg = sectionOf(page, /Urgente/);
+    const last = (await urg.locator('.truncate.text-\\[15px\\]').allInnerTexts()).at(-1) ?? '';
+    await page.getByRole('button', { name: `Mover "${last}" (reordenar o cambiar de prioridad)` }).focus();
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(150);
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(250);
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(250);
+    await page.keyboard.press('Space');
+    await expect(urg.getByText(last, { exact: true })).toHaveCount(0);
+    await expect(sectionOf(page, /Pronto/).getByText(last, { exact: true })).toBeVisible();
+  });
+
+  test('festeja al completar todo lo urgente (no al quitar la marca)', async ({ page }) => {
+    await echoItemPatch(page);
+    await page.goto('/preview.html?screen=items');
+    await swipe(page, page.getByLabel(/^Protectores de enchufes\. Desliza/), 1);
+    await expect(page.getByText(/→ Pronto/)).toBeVisible();
+    await expect(page.getByText('¡Todo lo urgente listo!')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Marcar "Asegurar muebles a la pared" como hecho' }).click();
+    await expect(page.getByText('¡Todo lo urgente listo!')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Marcar "Revisar calentador" como hecho' }).click();
+    await expect(page.getByText('¡Todo lo urgente listo!')).toBeVisible();
+  });
+
+  test('Ahora muestra solo lo de hoy y una línea de presupuesto', async ({ page }) => {
+    await page.goto('/preview.html?screen=now');
+    const hoy = page.getByRole('region', { name: 'Hoy' });
+    await expect(hoy).toBeVisible();
+    await expect(hoy.getByText('Asegurar muebles a la pared')).toBeVisible();
+    await expect(page.getByRole('img', { name: /Casa lista al \d+%/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Presupuesto · Bebé/ })).toBeVisible();
+    await expect(page.getByText('Próximo')).toHaveCount(0);
   });
 
   test('toggle día/noche cambia el tema y se recuerda', async ({ page }) => {

@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../../app/context';
-import { useItems, useUpdateItem, type Item } from '../../data/items';
+import { useItems, type Item } from '../../data/items';
 import { fmtMXN } from '../../lib/money';
-import { EmptyCard, Segmented, SectionTitle, Spinner } from '../../ui/kit';
-import { SortableGroup } from './SortableGroup';
+import { EmptyCard, Segmented, Spinner } from '../../ui/kit';
+import { PriorityBoard } from './PriorityBoard';
+import { useSetPriority } from './usePriority';
 import { useDeleteWithUndo } from './useDeleteWithUndo';
 import { ItemSheet } from './ItemSheet';
 import { QuickAdd } from './QuickAdd';
@@ -15,7 +16,7 @@ export function ItemsScreen() {
   const { hid } = useApp();
   const items = useItems(hid);
   const { toggle, sheet } = useItemToggle();
-  const update = useUpdateItem(hid);
+  const priority = useSetPriority();
   const removeItem = useDeleteWithUndo();
   const [type, setType] = useState<TypeFilter>('todo');
   const [area, setArea] = useState<string | null>(null);
@@ -97,20 +98,16 @@ export function ItemsScreen() {
           </div>
         )}
 
-        {groups.map((g) => (
-          <section key={g.priority} className="flex flex-col gap-2">
-            <SectionTitle dot={g.dot}>
-              {g.label} <span className="text-[13px] font-bold text-muted">{g.pending}</span>
-            </SectionTitle>
-            <SortableGroup
-              items={g.items}
-              onToggle={toggle}
-              onOpen={(it) => setOpenId(it.id)}
-              onDelete={removeItem}
-              onReorder={(id, sort_order) => update.mutate({ id, patch: { sort_order } })}
-            />
-          </section>
-        ))}
+        {groups.length > 0 && (
+          <PriorityBoard
+            groups={groups}
+            onToggle={toggle}
+            onOpen={(it) => setOpenId(it.id)}
+            onDelete={removeItem}
+            onToggleUrgent={priority.toggleUrgent}
+            onMove={(it, p, sortOrder) => priority.set(it, p, sortOrder)}
+          />
+        )}
 
         {hiddenDone > 0 && !showAllDone && (
           <button

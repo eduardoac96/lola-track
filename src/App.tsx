@@ -4,6 +4,7 @@ import { AppContext, type AppCtx } from './app/context';
 import { useHousehold, type HouseholdData } from './data/household';
 import { useRealtime } from './data/realtime';
 import { useAppBadge } from './data/useAppBadge';
+import { Celebrations } from './features/celebrate/Celebrations';
 import { useSession } from './data/session';
 import { hasSupabaseConfig } from './lib/supabase';
 import { LoginScreen } from './features/auth/LoginScreen';
@@ -93,6 +94,7 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
         </div>
       </Sheet>
       <TabBar />
+      <Celebrations hid={hid} />
     </AppContext.Provider>
   );
 }

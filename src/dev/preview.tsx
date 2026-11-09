@@ -14,6 +14,7 @@ import type { CalEvent } from '../data/events';
 import type { Balance, Movement } from '../data/budgets';
 import type { Member } from '../data/household';
 import { NowScreen } from '../features/now/NowScreen';
+import { Celebrations } from '../features/celebrate/Celebrations';
 import { ItemsScreen } from '../features/items/ItemsScreen';
 import { AgendaScreen } from '../features/agenda/AgendaScreen';
 import { BudgetScreen } from '../features/budget/BudgetScreen';
@@ -209,6 +210,7 @@ createRoot(document.getElementById('root')!).render(
               <Fab label="Agregar pendiente" onClick={() => {}} />
               <TabBar />
               <Badge />
+              <Celebrations hid={HID} />
             </AppContext.Provider>
           )}
         </MemoryRouter>

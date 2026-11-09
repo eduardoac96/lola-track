@@ -1,6 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import type { Item } from '../../data/items';
-import { areasOf, groupItems, itemMeta, pendingPurchasesCents, progressOf, sortOrderAt, topUrgent } from './select';
+import {
+  areasOf,
+  computeDrop,
+  groupItems,
+  itemMeta,
+  pendingPurchasesCents,
+  progressOf,
+  sortOrderAt,
+  topUrgent,
+} from './select';
 
 const NOW = new Date('2026-11-08T12:00:00Z');
 let n = 0;
@@ -123,5 +132,37 @@ describe('items/select', () => {
     expect(sortOrderAt(list, 1)).toBe(15);
     expect(sortOrderAt(list, 3)).toBe(1030);
     expect(sortOrderAt([], 0)).toBe(0);
+  });
+
+  it('computeDrop: reordenar dentro de la misma prioridad', () => {
+    const a = item({ priority: 'urgente', sort_order: 10 });
+    const b = item({ priority: 'urgente', sort_order: 20 });
+    const c = item({ priority: 'urgente', sort_order: 30 });
+    const by = { urgente: [a, b, c], pronto: [], algun_dia: [] };
+    expect(computeDrop(by, a.id, c.id)).toEqual({ priority: 'urgente', sort_order: 1030 }); // al final
+    expect(computeDrop(by, c.id, a.id)).toEqual({ priority: 'urgente', sort_order: -990 }); // al inicio
+    expect(computeDrop(by, a.id, a.id)).toBeNull();
+  });
+
+  it('computeDrop: soltar sobre un pendiente de otra prioridad lo pone antes de él', () => {
+    const a = item({ priority: 'pronto', sort_order: 5 });
+    const u1 = item({ priority: 'urgente', sort_order: 10 });
+    const u2 = item({ priority: 'urgente', sort_order: 20 });
+    const by = { urgente: [u1, u2], pronto: [a], algun_dia: [] };
+    expect(computeDrop(by, a.id, u2.id)).toEqual({ priority: 'urgente', sort_order: 15 });
+  });
+
+  it('computeDrop: soltar en una sección (aunque esté vacía) lo manda al final de esa prioridad', () => {
+    const a = item({ priority: 'pronto', sort_order: 5 });
+    const u1 = item({ priority: 'urgente', sort_order: 10 });
+    expect(computeDrop({ urgente: [u1], pronto: [a], algun_dia: [] }, a.id, 'group:urgente')).toEqual({
+      priority: 'urgente',
+      sort_order: 1010,
+    });
+    expect(computeDrop({ urgente: [], pronto: [a], algun_dia: [] }, a.id, 'group:algun_dia')).toEqual({
+      priority: 'algun_dia',
+      sort_order: 0,
+    });
+    expect(computeDrop({ urgente: [], pronto: [a], algun_dia: [] }, a.id, 'group:pronto')).toBeNull();
   });
 });
