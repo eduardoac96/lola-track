@@ -4,6 +4,7 @@
 // 2) Pendientes cuya fecha llegó (desde las 8:00) → un push por hogar con la lista.
 // Cada aviso se "reclama" antes de enviarse (reminded_at / due_reminded_at) para no duplicar.
 // Llaves VAPID: secrets de la función si existen; si no, Vault vía get_push_config().
+// Cada aviso lleva `badge` = urgentes sin hacer, para el número del ícono.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -27,12 +28,24 @@ function listText(titles: string[]): string {
 
 type Stats = { sent: number; pruned: number };
 
+/** Pendientes urgentes sin hacer → número del ícono de la app. */
+async function urgentCount(sb: SupabaseClient, householdId: string): Promise<number> {
+  const { count } = await sb
+    .from('items')
+    .select('id', { count: 'exact', head: true })
+    .eq('household_id', householdId)
+    .eq('priority', 'urgente')
+    .is('done_at', null);
+  return count ?? 0;
+}
+
 async function sendToHousehold(sb: SupabaseClient, householdId: string, payload: object, stats: Stats) {
   const { data: subs } = await sb
     .from('push_subscriptions')
     .select('id, endpoint, p256dh, auth')
     .eq('household_id', householdId);
-  const body = JSON.stringify(payload);
+  if (!subs?.length) return;
+  const body = JSON.stringify({ ...payload, badge: await urgentCount(sb, householdId) });
   await Promise.all(
     (subs ?? []).map(async (s) => {
       try {

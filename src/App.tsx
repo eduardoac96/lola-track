@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { AppContext, type AppCtx } from './app/context';
 import { useHousehold, type HouseholdData } from './data/household';
 import { useRealtime } from './data/realtime';
+import { useAppBadge } from './data/useAppBadge';
 import { useSession } from './data/session';
 import { hasSupabaseConfig } from './lib/supabase';
 import { LoginScreen } from './features/auth/LoginScreen';
@@ -58,6 +59,7 @@ function Gate() {
 function Shell({ userId, email, data }: { userId: string; email: string; data: HouseholdData }) {
   const hid = data.household.id;
   useRealtime(hid, userId);
+  useAppBadge(hid);
   const [quickAdd, setQuickAdd] = useState(false);
   const location = useLocation();
 

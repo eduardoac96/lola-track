@@ -40,5 +40,6 @@ export async function changePassword(password: string): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  void import('../lib/badge').then((b) => b.setBadge(0));
   await supabase().auth.signOut();
 }

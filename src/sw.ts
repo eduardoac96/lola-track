@@ -18,6 +18,8 @@ interface PushPayload {
   body?: string;
   url?: string;
   tag?: string;
+  /** Pendientes urgentes del hogar al momento del aviso → número del ícono. */
+  badge?: number;
 }
 
 self.addEventListener('push', (event) => {
@@ -27,14 +29,25 @@ self.addEventListener('push', (event) => {
   } catch {
     data = { body: event.data?.text() };
   }
+  const nav = self.navigator as WorkerNavigator & {
+    setAppBadge?: (n?: number) => Promise<void>;
+    clearAppBadge?: () => Promise<void>;
+  };
+  const badge =
+    typeof data.badge === 'number'
+      ? (data.badge > 0 ? nav.setAppBadge?.(data.badge) : nav.clearAppBadge?.())?.catch(() => undefined)
+      : undefined;
   event.waitUntil(
-    self.registration.showNotification(data.title ?? 'Lola Track', {
-      body: data.body ?? '',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: data.tag,
-      data: { url: data.url ?? '/agenda' },
-    }),
+    Promise.all([
+      badge,
+      self.registration.showNotification(data.title ?? 'Lola Track', {
+        body: data.body ?? '',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: data.tag,
+        data: { url: data.url ?? '/agenda' },
+      }),
+    ]),
   );
 });
 

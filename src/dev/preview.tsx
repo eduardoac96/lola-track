@@ -20,6 +20,12 @@ import { BudgetScreen } from '../features/budget/BudgetScreen';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { OnboardingScreen } from '../features/auth/OnboardingScreen';
 import { TabBar } from '../ui/TabBar';
+import { useAppBadge } from '../data/useAppBadge';
+
+function Badge() {
+  useAppBadge(HID);
+  return null;
+}
 import { Fab, ToastProvider } from '../ui/kit';
 import '../index.css';
 
@@ -202,6 +208,7 @@ createRoot(document.getElementById('root')!).render(
               </div>
               <Fab label="Agregar pendiente" onClick={() => {}} />
               <TabBar />
+              <Badge />
             </AppContext.Provider>
           )}
         </MemoryRouter>

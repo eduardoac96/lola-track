@@ -263,3 +263,22 @@ test('con 2 miembros no se ofrece cambiar de hogar', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Invitar a tu pareja' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '¿Tu pareja ya tiene un hogar en Lola?' })).toHaveCount(0);
 });
+
+test('el número del ícono = urgentes sin hacer y baja al completar uno', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __badge: number[] };
+    w.__badge = [];
+    Object.defineProperty(navigator, 'setAppBadge', { value: (n: number) => (w.__badge.push(n), Promise.resolve()) });
+    Object.defineProperty(navigator, 'clearAppBadge', { value: () => (w.__badge.push(0), Promise.resolve()) });
+  });
+  await page.route('**/rest/v1/rpc/complete_item', (r) =>
+    r.fulfill({
+      json: { id: (r.request().postDataJSON() as { p_item: string }).p_item, done_at: new Date().toISOString() },
+    }),
+  );
+  await page.goto('/preview.html?screen=items');
+  const last = () => page.evaluate(() => (window as unknown as { __badge: number[] }).__badge.at(-1));
+  await expect.poll(last).toBe(3);
+  await page.getByRole('button', { name: 'Marcar "Asegurar muebles a la pared" como hecho' }).click();
+  await expect.poll(last).toBe(2);
+});
