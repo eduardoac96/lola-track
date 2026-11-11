@@ -240,17 +240,26 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          last_urgent_reminder: string | null;
+          last_weekly_digest: string | null;
           name: string;
+          urgent_reminders: boolean;
         };
         Insert: {
           created_at?: string;
           id?: string;
+          last_urgent_reminder?: string | null;
+          last_weekly_digest?: string | null;
           name: string;
+          urgent_reminders?: boolean;
         };
         Update: {
           created_at?: string;
           id?: string;
+          last_urgent_reminder?: string | null;
+          last_weekly_digest?: string | null;
           name?: string;
+          urgent_reminders?: boolean;
         };
         Relationships: [];
       };
@@ -378,6 +387,78 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      wishes: {
+        Row: {
+          created_at: string;
+          got_at: string | null;
+          household_id: string;
+          id: string;
+          link_url: string | null;
+          notes: string | null;
+          owner_id: string;
+          price_estimated_cents: number | null;
+          sort_order: number;
+          starred: boolean;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          got_at?: string | null;
+          household_id: string;
+          id?: string;
+          link_url?: string | null;
+          notes?: string | null;
+          owner_id?: string;
+          price_estimated_cents?: number | null;
+          sort_order?: number;
+          starred?: boolean;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          got_at?: string | null;
+          household_id?: string;
+          id?: string;
+          link_url?: string | null;
+          notes?: string | null;
+          owner_id?: string;
+          price_estimated_cents?: number | null;
+          sort_order?: number;
+          starred?: boolean;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      wish_claims: {
+        Row: {
+          claimed_by: string;
+          created_at: string;
+          household_id: string;
+          status: 'apartado' | 'comprado';
+          updated_at: string;
+          wish_id: string;
+        };
+        Insert: {
+          claimed_by?: string;
+          created_at?: string;
+          household_id: string;
+          status?: 'apartado' | 'comprado';
+          updated_at?: string;
+          wish_id: string;
+        };
+        Update: {
+          claimed_by?: string;
+          created_at?: string;
+          household_id?: string;
+          status?: 'apartado' | 'comprado';
+          updated_at?: string;
+          wish_id?: string;
+        };
+        Relationships: [];
       };
     };
     Views: {

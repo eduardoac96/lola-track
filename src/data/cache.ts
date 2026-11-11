@@ -9,6 +9,8 @@ export const keys = {
   balances: (hid: string) => ['balances', hid] as const,
   movements: (hid: string) => ['movements', hid] as const,
   photo: (path: string) => ['photo', path] as const,
+  wishes: (hid: string) => ['wishes', hid] as const,
+  claims: (hid: string) => ['wish_claims', hid] as const,
 };
 
 /** Inserta o reemplaza por id (dedupe para ecos de Realtime y optimistic updates). */

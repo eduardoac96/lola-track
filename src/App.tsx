@@ -13,6 +13,7 @@ import { NowScreen } from './features/now/NowScreen';
 import { ItemsScreen } from './features/items/ItemsScreen';
 import { AgendaScreen } from './features/agenda/AgendaScreen';
 import { BudgetScreen } from './features/budget/BudgetScreen';
+import { WishesScreen } from './features/wishes/WishesScreen';
 import { QuickAdd } from './features/items/QuickAdd';
 import { TabBar } from './ui/TabBar';
 import { Sheet } from './ui/Sheet';
@@ -72,7 +73,7 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
     () => ({ userId, email, hid, household: data.household, members: data.members, memberById }),
     [userId, email, hid, data, memberById],
   );
-  const showFab = location.pathname !== '/presupuesto';
+  const showFab = location.pathname !== '/presupuesto' && location.pathname !== '/deseos';
 
   return (
     <AppContext.Provider value={ctx}>
@@ -83,6 +84,7 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
             <Route path="/pendientes" element={<ItemsScreen />} />
             <Route path="/agenda" element={<AgendaScreen />} />
             <Route path="/presupuesto" element={<BudgetScreen />} />
+            <Route path="/deseos" element={<WishesScreen />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

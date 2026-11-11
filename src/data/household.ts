@@ -122,3 +122,23 @@ export function friendlyError(e: unknown): string {
   if (msg.includes('Failed to fetch')) return 'Sin conexión. Intenta de nuevo.';
   return 'Algo salió mal. Intenta de nuevo.';
 }
+
+/** Ajustes del hogar (p. ej. recordatorio de urgentes). Optimista sobre la cache del hogar. */
+export function useUpdateHousehold(userId: string | undefined) {
+  const qc = useQueryClient();
+  const key = keys.household(userId);
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: { urgent_reminders?: boolean; name?: string } }) => {
+      const { error } = await supabase().from('households').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onMutate: async ({ patch }) => {
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<HouseholdData | null>(key);
+      if (prev) qc.setQueryData<HouseholdData>(key, { ...prev, household: { ...prev.household, ...patch } });
+      return prev;
+    },
+    onError: (_e, _v, prev) => qc.setQueryData(key, prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  });
+}

@@ -29,7 +29,7 @@ Preparar la casa para la llegada de los niños genera decenas de compras, arregl
 
 ### Fuera (explícito)
 
-- Asignar pendientes a personas, subtareas, recurrencias.
+- Asignar pendientes a personas, subtareas, recurrencias. (Los **Deseos** sí son por persona; ver H9.)
 - Sincronizar con Google o Apple Calendar.
 - Edición offline con cola de sincronización (la app funciona de solo lectura sin red y muestra un aviso).
 - Multi-moneda (solo MXN) y reportes o gráficas de gasto.
@@ -104,6 +104,18 @@ Preparar la casa para la llegada de los niños genera decenas de compras, arregl
 - Se comprime en el cliente a ≤1280 px de lado mayor, WebP con calidad 0.8 (unos 150 KB) y se sube a Storage `photos/{household_id}/{item_id}.webp`.
 - Se muestra como miniatura de 52 px en la tarjeta y a tamaño completo en el detalle. Sin foto, se ve el ícono del tipo sobre su tinte.
 
+### H9 · Deseos por persona (v1.3)
+
+- Pestaña **Deseos** (5ª). Cada miembro tiene su lista; selector con avatar ("Mis deseos" primero, luego la pareja).
+- Solo el dueño agrega, edita, marca favorito (estrella), "Ya lo tengo" o elimina sus deseos (RLS). Captura con un campo: `Audífonos $2,500` (precio opcional). Detalle: precio, link, notas.
+- En la lista de otra persona: **Apartar → Apartado → Comprado** (o Libre desde el detalle). **El dueño nunca ve esos estados**: tabla `wish_claims` aparte, RLS que excluye al dueño y sin Realtime (los DELETE de Realtime no respetan RLS).
+- Total de la lista abierta al pie. Deslizar a la izquierda elimina con "Deshacer"; a la derecha, "Ya lo tengo".
+
+### H10 · Recordatorio de urgentes (v1.3)
+
+- Si el hogar tiene urgentes sin hacer, push a las **8:00, 13:00 y 19:00** (Monterrey): "Tienes N urgentes" + los primeros 3. Uno por turno (`households.last_urgent_reminder`).
+- Se apaga/enciende para todo el hogar en Ajustes → Avisos → "Recordar urgentes" (`households.urgent_reminders`, encendido por defecto).
+
 ## 5. UX y diseño (tokens del mockup)
 
 | Token                                | Valor                                                          |
@@ -120,7 +132,7 @@ Preparar la casa para la llegada de los niños genera decenas de compras, arregl
 | Radios                               | tarjeta 18–20, hero 26, sheet 28, botón 14–20                  |
 | Avatares                             | miembro 1 `#5B47E0`, miembro 2 `#F5A524` (se eligen al unirse) |
 
-- Navegación: tab bar inferior de 4 pestañas (Ahora, Pendientes, Agenda, Presupuesto) con `safe-area-inset-bottom`.
+- Navegación: tab bar inferior de 5 pestañas (Ahora, Pendientes, Agenda, Presupuesto, Deseos) con `safe-area-inset-bottom`.
 - Sheets: bottom sheet con backdrop, que se cierra deslizando hacia abajo o con Esc.
 - Feedback: `navigator.vibrate(10)` al completar (Android; iOS lo ignora sin romper nada) y una animación de check de 250 ms.
 - Accesibilidad: contraste AA, `aria-label` en los botones de solo ícono y la tab bar como `<nav>`.

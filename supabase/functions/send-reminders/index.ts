@@ -3,6 +3,7 @@
 // 1) Eventos con aviso vencido → un push por evento.
 // 2) Pendientes cuya fecha llegó (desde las 8:00) → un push por hogar con la lista.
 // 3) Domingo desde las 19:00 → resumen semanal por hogar (weekly_digests / last_weekly_digest).
+// 4) Urgentes sin hacer → un push por hogar a las 8:00, 13:00 y 19:00 (urgent_reminders / last_urgent_reminder).
 // Cada aviso se "reclama" antes de enviarse (reminded_at / due_reminded_at) para no duplicar.
 // Llaves VAPID: secrets de la función si existen; si no, Vault vía get_push_config().
 // Cada aviso lleva `badge` = urgentes sin hacer, para el número del ícono.
@@ -37,9 +38,22 @@ export function digestText(d: { done_count: number; spent_cents: number; urgent_
   const parts = [
     d.done_count === 1 ? '1 pendiente hecho' : `${d.done_count} pendientes hechos`,
     d.spent_cents > 0 ? `${mxn(d.spent_cents)} gastados` : null,
-    d.urgent_pending > 0 ? `${d.urgent_pending} urgente${d.urgent_pending === 1 ? '' : 's'} para la semana` : 'nada urgente',
+    d.urgent_pending > 0
+      ? `${d.urgent_pending} urgente${d.urgent_pending === 1 ? '' : 's'} para la semana`
+      : 'nada urgente',
   ].filter(Boolean);
   return `Esta semana: ${parts.join(', ')}.`;
+}
+
+/** Push de urgentes (un `tag` por turno: iOS no vuelve a sonar si se reutiliza el tag). */
+export function urgentPayload(titles: string[], slot: string) {
+  const n = titles.length;
+  return {
+    title: n === 1 ? 'Tienes 1 urgente' : `Tienes ${n} urgentes`,
+    body: listText(titles),
+    url: '/pendientes',
+    tag: `urgentes-${slot}`,
+  };
 }
 
 /** Pendientes urgentes sin hacer → número del ícono de la app. */
@@ -176,8 +190,29 @@ Deno.serve(async (req) => {
     const body = digestText(d);
     if (!body) continue;
     digests++;
-    await sendToHousehold(sb, d.household_id, { title: 'Resumen de la semana', body, url: '/', tag: `digest-${d.week}` }, stats);
+    await sendToHousehold(
+      sb,
+      d.household_id,
+      { title: 'Resumen de la semana', body, url: '/', tag: `digest-${d.week}` },
+      stats,
+    );
   }
 
-  return json({ events, dueHouseholds, digests, ...stats });
+  // 4) Urgentes (8:00, 13:00, 19:00 Monterrey; se puede apagar por hogar en Ajustes)
+  let urgent = 0;
+  const { data: urgentRows } = await sb.rpc('urgent_reminders');
+  for (const u of urgentRows ?? []) {
+    const { data: claimed } = await sb
+      .from('households')
+      .update({ last_urgent_reminder: u.slot })
+      .eq('id', u.household_id)
+      .or(`last_urgent_reminder.is.null,last_urgent_reminder.lt."${u.slot}"`)
+      .select('id')
+      .maybeSingle();
+    if (!claimed) continue;
+    urgent++;
+    await sendToHousehold(sb, u.household_id, urgentPayload(u.titles, u.slot), stats);
+  }
+
+  return json({ events, dueHouseholds, digests, urgent, ...stats });
 });

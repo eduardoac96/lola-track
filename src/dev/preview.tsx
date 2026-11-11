@@ -1,6 +1,6 @@
 /**
  * Vista previa de pantallas con datos de ejemplo (solo dev, no entra al build).
- * http://localhost:5173/preview.html?screen=now|items|agenda|budget|login|onboarding
+ * http://localhost:5173/preview.html?screen=now|items|agenda|budget|wishes|login|onboarding  (&como=pareja: verlo como la pareja)
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -18,6 +18,8 @@ import { Celebrations } from '../features/celebrate/Celebrations';
 import { ItemsScreen } from '../features/items/ItemsScreen';
 import { AgendaScreen } from '../features/agenda/AgendaScreen';
 import { BudgetScreen } from '../features/budget/BudgetScreen';
+import { WishesScreen } from '../features/wishes/WishesScreen';
+import type { Wish, WishClaim } from '../data/wishes';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { OnboardingScreen } from '../features/auth/OnboardingScreen';
 import { TabBar } from '../ui/TabBar';
@@ -166,26 +168,93 @@ const balances: Balance[] = [
   },
 ];
 
+const wish = (id: string, owner: string, title: string, p: Partial<Wish> = {}): Wish => ({
+  id,
+  household_id: HID,
+  owner_id: owner,
+  title,
+  price_estimated_cents: null,
+  link_url: null,
+  notes: null,
+  starred: false,
+  got_at: null,
+  sort_order: Number(id.replace(/\D/g, '')),
+  created_at: at(-3, 10),
+  updated_at: at(-3, 10),
+  ...p,
+});
+const wishes: Wish[] = [
+  wish('w1', ME, 'Audífonos con cancelación de ruido', {
+    price_estimated_cents: 549900,
+    starred: true,
+    link_url: 'https://www.amazon.com.mx/dp/B0EXAMPLE',
+  }),
+  wish('w2', ME, 'Libro: Atomic Habits', { price_estimated_cents: 39900 }),
+  wish('w3', ME, 'Clase de cocina para dos'),
+  wish('w4', ME, 'Termo Stanley', { got_at: at(-1, 12), price_estimated_cents: 89900 }),
+  wish('w5', PARTNER, 'Bolsa de mano café', {
+    price_estimated_cents: 180000,
+    starred: true,
+    notes: 'Mediana, color camel',
+  }),
+  wish('w6', PARTNER, 'Masaje en spa', { price_estimated_cents: 120000 }),
+  wish('w7', PARTNER, 'Plantas para la terraza', { price_estimated_cents: 60000 }),
+];
+const claims: WishClaim[] = [
+  {
+    wish_id: 'w5',
+    household_id: HID,
+    status: 'apartado',
+    claimed_by: ME,
+    created_at: at(-1, 9),
+    updated_at: at(-1, 9),
+  },
+  {
+    wish_id: 'w7',
+    household_id: HID,
+    status: 'comprado',
+    claimed_by: ME,
+    created_at: at(-1, 9),
+    updated_at: at(-1, 9),
+  },
+];
+
 const qc = createQueryClient({ staleTime: Infinity, retry: false, refetchOnWindowFocus: false });
 qc.setQueryData(keys.items(HID), items);
 qc.setQueryData(keys.events(HID), events);
 qc.setQueryData(keys.balances(HID), balances);
 qc.setQueryData(keys.movements(HID), movements);
+qc.setQueryData(keys.wishes(HID), wishes);
+qc.setQueryData(keys.claims(HID), claims);
 
 // ?solo=1 simula a alguien solo en su hogar (muestra "Unirme a otro hogar" en Ajustes)
 const shownMembers = new URLSearchParams(location.search).has('solo') ? members.slice(0, 1) : members;
 
+const asPartner = new URLSearchParams(location.search).get('como') === 'pareja';
 const ctx: AppCtx = {
-  userId: ME,
+  userId: asPartner ? PARTNER : ME,
   email: 'odin@example.com',
   hid: HID,
-  household: { id: HID, name: 'Nuestra casa', created_at: at(-30, 9) },
+  household: {
+    id: HID,
+    name: 'Nuestra casa',
+    created_at: at(-30, 9),
+    urgent_reminders: true,
+    last_urgent_reminder: null,
+    last_weekly_digest: null,
+  },
   members: shownMembers,
   memberById: (id) => members.find((m) => m.user_id === id),
 };
 
 const screen = new URLSearchParams(location.search).get('screen') ?? 'now';
-const paths: Record<string, string> = { now: '/', items: '/pendientes', agenda: '/agenda', budget: '/presupuesto' };
+const paths: Record<string, string> = {
+  now: '/',
+  items: '/pendientes',
+  agenda: '/agenda',
+  budget: '/presupuesto',
+  wishes: '/deseos',
+};
 const isApp = screen in paths;
 
 createRoot(document.getElementById('root')!).render(
@@ -204,10 +273,11 @@ createRoot(document.getElementById('root')!).render(
                     <Route path="/pendientes" element={<ItemsScreen />} />
                     <Route path="/agenda" element={<AgendaScreen />} />
                     <Route path="/presupuesto" element={<BudgetScreen />} />
+                    <Route path="/deseos" element={<WishesScreen />} />
                   </Routes>
                 </div>
               </div>
-              <Fab label="Agregar pendiente" onClick={() => {}} />
+              {screen !== 'budget' && screen !== 'wishes' && <Fab label="Agregar pendiente" onClick={() => {}} />}
               <TabBar />
               <Badge />
               <Celebrations hid={HID} />

@@ -58,3 +58,9 @@ Orden pensado para ROASTER/FIXER: cada tarea es un PR pequeño con su criterio v
 - [x] **T33** "Ahora" simplificado: encabezado con mini anillo de "casa lista" + "N de M hechos", una línea de presupuesto y una sola lista **Hoy** (máx. 5: eventos de hoy aún vigentes, urgentes en su orden, luego lo que vence hoy o ya venció; "Día libre" si no hay nada). Selector puro `buildToday` con pruebas.
 - [x] **T34** Festejos sin gamificación: "¡Todo lo urgente listo!" al completar el último urgente (no al quitar la marca ni al borrar) y hitos de casa lista 25/50/75/100 % (con ≥6 pendientes), una vez por hogar y dispositivo (`lola:milestone:<hid>`, se inicializa en silencio). Háptico y animación corta; respeta movimiento reducido.
 - [x] **T35** Resumen semanal por push: domingo desde las 19:00 Monterrey, "Esta semana: N pendientes hechos, $X gastados, …" (migración `20261109040000`: `households.last_weekly_digest` + RPC `weekly_digests` solo para service_role; `send-reminders` v4 reclama el hogar antes de enviar; no envía si la semana no tuvo actividad). Verificado contra la función desplegada.
+
+## v1.3 · Deseos y urgentes (10 nov 2026)
+
+- [x] **T36** Deseos por persona (H9): migración `20261111030000` (`wishes` con FK compuesta a `household_members`, `wish_claims` oculta al dueño vía `can_claim_wish`, `wishes` en Realtime), `data/wishes.ts`, pestaña `/deseos` (selector por persona, captura con `$precio`, estrella, "Ya lo tengo", apartar/comprado, swipe con deshacer), preview `?screen=wishes` (`&como=pareja`).
+- [x] **T37** Recordatorio de urgentes (H10): `households.urgent_reminders` + `last_urgent_reminder`, RPC `urgent_reminders()` (solo service_role), `send-reminders` v5 reclama el turno 8/13/19 antes de enviar; switch "Recordar urgentes" en Ajustes.
+- [x] Corrección: la regla global `a {}` pasó a `@layer base`; la pestaña activa ya se distingue de las demás.

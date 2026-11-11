@@ -21,6 +21,9 @@ export function useRealtime(hid: string | undefined, userId: string | undefined)
       ['events', keys.events(hid), []],
       ['budget_movements', keys.movements(hid), [keys.balances(hid)]],
       ['budgets', keys.balances(hid), []],
+      // Los apartados (wish_claims) no van por Realtime para no filtrar la sorpresa al dueño;
+      // se refrescan cuando cambia un deseo, al volver a la app y al reconectar.
+      ['wishes', keys.wishes(hid), [keys.claims(hid)]],
     ];
 
     const channel = sb.channel(`household:${hid}`);
@@ -60,6 +63,7 @@ export function useRealtime(hid: string | undefined, userId: string | undefined)
       // Al reconectar, refrescar todo por si hubo cambios mientras estábamos fuera.
       if (status === 'SUBSCRIBED') {
         tables.forEach(([, key]) => qc.invalidateQueries({ queryKey: key }));
+        qc.invalidateQueries({ queryKey: keys.claims(hid) });
       }
     });
 

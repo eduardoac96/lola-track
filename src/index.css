@@ -117,8 +117,11 @@
   }
 }
 
-a {
-  color: var(--color-primary-hover);
+/* En @layer base para que las utilidades (p. ej. text-muted de la tab bar) puedan ganarle. */
+@layer base {
+  a {
+    color: var(--color-primary-hover);
+  }
 }
 
 html,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../../app/context';
-import { friendlyError, useCreateInvite } from '../../data/household';
+import { friendlyError, useCreateInvite, useUpdateHousehold } from '../../data/household';
 import { MIN_PASSWORD, changePassword, signOut } from '../../data/session';
 import { disablePush, enablePush, getPushState, type PushState } from '../../lib/push';
 import { Sheet } from '../../ui/Sheet';
@@ -12,7 +12,7 @@ import { ChecklistButton } from '../items/ChecklistButton';
 
 const PUSH_COPY: Record<PushState, string> = {
   on: 'Avisos activados en este dispositivo.',
-  off: 'Recibe un aviso antes de cada evento de la agenda.',
+  off: 'Recibe avisos de la agenda y de los pendientes urgentes.',
   denied: 'Bloqueaste las notificaciones. Actívalas en Ajustes del iPhone → Lola.',
   'needs-install': 'Para avisos en iPhone: Compartir → "Agregar a pantalla de inicio" y abre Lola desde ahí.',
   unsupported: 'Este navegador no soporta avisos.',
@@ -107,6 +107,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             </PrimaryButton>
           )}
           {pushError && <p className="m-0 text-[13px] font-semibold text-gasto">{pushError}</p>}
+          <UrgentRemindersToggle />
         </section>
 
         <section className="flex flex-col gap-3 rounded-[var(--radius-card)] bg-bg p-4">
@@ -142,6 +143,36 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
         </div>
       </div>
     </Sheet>
+  );
+}
+
+function UrgentRemindersToggle() {
+  const { household, userId } = useApp();
+  const update = useUpdateHousehold(userId);
+  const on = household.urgent_reminders !== false;
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => update.mutate({ id: household.id, patch: { urgent_reminders: !on } })}
+      className="flex min-h-14 items-center gap-3 rounded-[14px] bg-card px-3.5 py-2.5 text-left"
+    >
+      <span className="flex flex-1 flex-col">
+        <span className="text-[15px] font-bold">Recordar urgentes</span>
+        <span className="text-[12px] font-medium text-muted">
+          8:00, 13:00 y 19:00 si hay urgentes sin hacer · para todo el hogar
+        </span>
+      </span>
+      <span
+        aria-hidden="true"
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? 'bg-done' : 'bg-check'}`}
+      >
+        <span
+          className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[22px]' : 'translate-x-0.5'}`}
+        />
+      </span>
+    </button>
   );
 }
 
