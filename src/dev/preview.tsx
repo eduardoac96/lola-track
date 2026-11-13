@@ -9,6 +9,7 @@ import { createQueryClient } from '../lib/queryClient';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { AppContext, type AppCtx } from '../app/context';
 import { keys } from '../data/cache';
+import type { List } from '../data/lists';
 import type { Item } from '../data/items';
 import type { CalEvent } from '../data/events';
 import type { Balance, Movement } from '../data/budgets';
@@ -52,6 +53,7 @@ const it = (p: Partial<Item>): Item => ({
   title: '',
   priority: 'pronto',
   area: null,
+  list_id: null,
   price_estimated_cents: null,
   sort_order: -Date.now() + seq * 1000,
   price_actual_cents: null,
@@ -226,6 +228,34 @@ qc.setQueryData(keys.balances(HID), balances);
 qc.setQueryData(keys.movements(HID), movements);
 qc.setQueryData(keys.wishes(HID), wishes);
 qc.setQueryData(keys.claims(HID), claims);
+
+// ?listas=1 agrega listas de ejemplo (Posada, Mandado) con algunos pendientes
+if (new URLSearchParams(location.search).has('listas')) {
+  const mk = (id: string, name: string, archived = false): List => ({
+    id,
+    household_id: HID,
+    name,
+    sort_order: seq++,
+    archived_at: archived ? at(-3, 9) : null,
+    created_by: ME,
+    created_at: at(-3, 9),
+    updated_at: at(-3, 9),
+  });
+  qc.setQueryData(keys.lists(HID), [
+    mk('l-posada', 'Posada'),
+    mk('l-mandado', 'Mandado'),
+    mk('l-boda', 'Boda prima', true),
+  ]);
+  qc.setQueryData(keys.items(HID), [
+    it({ type: 'compra', title: 'Piñata', priority: 'urgente', list_id: 'l-posada', price_estimated_cents: 45000 }),
+    it({ type: 'compra', title: 'Aguinaldos', list_id: 'l-posada', price_estimated_cents: 120000 }),
+    it({ type: 'tarea', title: 'Mandar invitaciones', list_id: 'l-posada' }),
+    it({ type: 'compra', title: 'Leche y pañales', list_id: 'l-mandado' }),
+    ...items,
+  ]);
+} else {
+  qc.setQueryData(keys.lists(HID), []);
+}
 
 // ?solo=1 simula a alguien solo en su hogar (muestra "Unirme a otro hogar" en Ajustes)
 const shownMembers = new URLSearchParams(location.search).has('solo') ? members.slice(0, 1) : members;

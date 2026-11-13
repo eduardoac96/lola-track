@@ -3,7 +3,15 @@ import { useItems } from '../../data/items';
 import { Icon } from '../../ui/Icon';
 import { haptic } from '../../ui/kit';
 import { progressOf } from '../items/select';
-import { MILESTONE_TEXT, milestoneToCelebrate, reachedMilestone, readSeen, urgentCleared, writeSeen, type Snap } from './logic';
+import {
+  MILESTONE_TEXT,
+  milestoneToCelebrate,
+  reachedMilestone,
+  readSeen,
+  urgentCleared,
+  writeSeen,
+  type Snap,
+} from './logic';
 
 interface Moment {
   id: number;

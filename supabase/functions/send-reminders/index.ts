@@ -56,15 +56,11 @@ export function urgentPayload(titles: string[], slot: string) {
   };
 }
 
-/** Pendientes urgentes sin hacer → número del ícono de la app. */
+/** Pendientes urgentes sin hacer (sin listas archivadas) → número del ícono de la app. */
 async function urgentCount(sb: SupabaseClient, householdId: string): Promise<number> {
-  const { count } = await sb
-    .from('items')
-    .select('id', { count: 'exact', head: true })
-    .eq('household_id', householdId)
-    .eq('priority', 'urgente')
-    .is('done_at', null);
-  return count ?? 0;
+  // RPC: excluye pendientes de listas archivadas (migración 20261113040000).
+  const { data } = await sb.rpc('urgent_count', { p_household: householdId });
+  return typeof data === 'number' ? data : 0;
 }
 
 async function sendToHousehold(sb: SupabaseClient, householdId: string, payload: object, stats: Stats) {

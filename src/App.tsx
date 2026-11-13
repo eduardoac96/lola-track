@@ -15,6 +15,8 @@ import { AgendaScreen } from './features/agenda/AgendaScreen';
 import { BudgetScreen } from './features/budget/BudgetScreen';
 import { WishesScreen } from './features/wishes/WishesScreen';
 import { QuickAdd } from './features/items/QuickAdd';
+import { useLists } from './data/lists';
+import { captureListId, resolveListFilter, useSelectedList } from './features/items/selectedList';
 import { TabBar } from './ui/TabBar';
 import { Sheet } from './ui/Sheet';
 import { EmptyCard, Fab, PrimaryButton, Spinner, ToastProvider } from './ui/kit';
@@ -64,6 +66,11 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
   useAppBadge(hid);
   const [quickAdd, setQuickAdd] = useState(false);
   const location = useLocation();
+  const lists = useLists(hid);
+  const [rawList] = useSelectedList(hid);
+  // En Pendientes, el + agrega a la lista abierta; en las demás pantallas, a General.
+  const fabListId = location.pathname === '/pendientes' ? captureListId(resolveListFilter(rawList, lists.data)) : null;
+  const fabList = lists.data?.find((l) => l.id === fabListId);
 
   const memberById = useCallback(
     (id: string | null | undefined) => (id ? data.members.find((m) => m.user_id === id) : undefined),
@@ -90,9 +97,13 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
         </div>
       </div>
       {showFab && <Fab label="Agregar pendiente" onClick={() => setQuickAdd(true)} />}
-      <Sheet open={quickAdd} onClose={() => setQuickAdd(false)} title="Nuevo pendiente">
+      <Sheet
+        open={quickAdd}
+        onClose={() => setQuickAdd(false)}
+        title={fabList ? `Nuevo en ${fabList.name}` : 'Nuevo pendiente'}
+      >
         <div className="pb-2">
-          <QuickAdd autoFocus onCreated={() => setQuickAdd(false)} />
+          <QuickAdd autoFocus listId={fabListId} onCreated={() => setQuickAdd(false)} />
         </div>
       </Sheet>
       <TabBar />

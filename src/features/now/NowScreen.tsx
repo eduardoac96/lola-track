@@ -149,7 +149,11 @@ export function NowScreen() {
           <>
             {today.entries.map((e) =>
               e.event ? (
-                <EventRow key={e.event.id} ev={e.event} onOpen={() => e.event && setEventTarget({ kind: 'edit', event: e.event })} />
+                <EventRow
+                  key={e.event.id}
+                  ev={e.event}
+                  onOpen={() => e.event && setEventTarget({ kind: 'edit', event: e.event })}
+                />
               ) : e.item ? (
                 <ItemCard
                   key={e.item.id}
@@ -169,7 +173,6 @@ export function NowScreen() {
           </>
         )}
       </section>
-
 
       <ItemSheet item={all.find((i) => i.id === openId) ?? null} onClose={() => setOpenId(null)} />
       <EventSheet target={eventTarget} onClose={() => setEventTarget(null)} />

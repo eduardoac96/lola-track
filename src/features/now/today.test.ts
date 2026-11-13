@@ -12,6 +12,7 @@ const item = (p: Partial<Item>): Item => ({
   title: `I${n}`,
   priority: 'pronto',
   area: null,
+  list_id: null,
   price_estimated_cents: null,
   price_actual_cents: null,
   due_date: null,

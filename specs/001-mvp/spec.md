@@ -116,6 +116,13 @@ Preparar la casa para la llegada de los niños genera decenas de compras, arregl
 - Si el hogar tiene urgentes sin hacer, push a las **8:00, 13:00 y 19:00** (Monterrey): "Tienes N urgentes" + los primeros 3. Uno por turno (`households.last_urgent_reminder`).
 - Se apaga/enciende para todo el hogar en Ajustes → Avisos → "Recordar urgentes" (`households.urgent_reminders`, encendido por defecto).
 
+### H11 · Listas (v1.4)
+
+- **Dado** que no hay listas, **entonces** Pendientes se ve igual que antes, con un botón "+ Lista".
+- **Dado** que creo "Posada", **entonces** aparecen chips Todas · General · Posada · +, y lo que capturo con la lista abierta cae en ella (también con el botón +). Los pendientes sin lista están en General.
+- Tocar la lista abierta permite renombrarla, **terminar y archivar** (se oculta con sus pendientes en toda la app y no genera avisos; se restaura desde "Nueva lista") o eliminarla (sus pendientes pasan a General).
+- El total de "Compras pendientes" y los conteos respetan la lista abierta. Un pendiente se cambia de lista desde su hoja.
+
 ## 5. UX y diseño (tokens del mockup)
 
 | Token                                | Valor                                                          |

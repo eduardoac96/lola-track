@@ -29,8 +29,11 @@ export function ItemCard({
   onDelete,
   onToggleUrgent,
   handle,
+  listName,
 }: {
   item: Item;
+  /** Nombre de la lista a mostrar en la línea de detalle (solo en la vista "Todas"). */
+  listName?: string;
   onToggle: () => void;
   onOpen: () => void;
   /** Si viene, la tarjeta se puede deslizar a la izquierda para eliminar. */
@@ -52,7 +55,7 @@ export function ItemCard({
         <ItemThumb item={item} />
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className={`truncate text-[15px] font-bold ${done ? 'line-through' : ''}`}>{item.title}</span>
-          <span className="truncate text-[12px] font-medium text-muted">{itemMeta(item)}</span>
+          <span className="truncate text-[12px] font-medium text-muted">{itemMeta(item, listName)}</span>
         </span>
       </button>
       <button

@@ -7,7 +7,18 @@ import { Icon } from '../../ui/Icon';
 import { PRIORITIES, TYPES } from './select';
 
 /** Campo único de captura con vista previa de lo que se detectó. */
-export function QuickAdd({ onCreated, autoFocus }: { onCreated?: () => void; autoFocus?: boolean }) {
+export function QuickAdd({
+  onCreated,
+  autoFocus,
+  listId = null,
+  placeholder = 'Cuna $4500 !urgente @cuarto',
+}: {
+  onCreated?: () => void;
+  autoFocus?: boolean;
+  /** Lista donde cae lo capturado (null = General). */
+  listId?: string | null;
+  placeholder?: string;
+}) {
   const { hid, userId } = useApp();
   const create = useCreateItem(hid, userId);
   const [text, setText] = useState('');
@@ -25,6 +36,7 @@ export function QuickAdd({ onCreated, autoFocus }: { onCreated?: () => void; aut
       area: parsed.area,
       price_estimated_cents: parsed.priceCents,
       sort_order: -Date.now(),
+      list_id: listId,
     });
     setText('');
     input.current?.focus();
@@ -48,7 +60,7 @@ export function QuickAdd({ onCreated, autoFocus }: { onCreated?: () => void; aut
           ref={input}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Cuna $4500 !urgente @cuarto"
+          placeholder={placeholder}
           autoComplete="off"
           enterKeyHint="done"
           autoFocus={autoFocus}

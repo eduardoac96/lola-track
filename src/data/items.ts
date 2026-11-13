@@ -1,14 +1,34 @@
+import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Tables, TablesInsert, TablesUpdate } from '../lib/database.types';
 import { keys, newId, removeFromList, restore, snapshot, upsertInList } from './cache';
+import { useLists } from './lists';
 
 export type Item = Tables<'items'>;
 export type ItemType = Item['type'];
 export type ItemPriority = Item['priority'];
 
+/**
+ * Pendientes del hogar, sin los de listas archivadas (se ocultan en toda la app:
+ * Ahora, Pendientes, Agenda, número del ícono). La cache guarda todo; solo la vista filtra.
+ */
 export function useItems(hid: string) {
+  const lists = useLists(hid);
+  const archived = (lists.data ?? [])
+    .filter((l) => l.archived_at)
+    .map((l) => l.id)
+    .join(',');
+  const select = useCallback(
+    (rows: Item[]): Item[] => {
+      if (!archived) return rows;
+      const set = new Set(archived.split(','));
+      return rows.filter((r) => !r.list_id || !set.has(r.list_id));
+    },
+    [archived],
+  );
   return useQuery({
+    select,
     queryKey: keys.items(hid),
     queryFn: async (): Promise<Item[]> => {
       const { data, error } = await supabase()
@@ -47,6 +67,7 @@ export function useCreateItem(hid: string, userId: string) {
         due_date: null,
         due_reminded_at: null,
         link_url: null,
+        list_id: null,
         notes: null,
         photo_path: null,
         price_actual_cents: null,

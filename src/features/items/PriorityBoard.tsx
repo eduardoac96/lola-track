@@ -33,6 +33,8 @@ interface Props {
   onToggleUrgent: (i: Item) => void;
   /** Persiste prioridad + orden de un pendiente soltado. */
   onMove: (i: Item, priority: ItemPriority, sortOrder: number) => void;
+  /** Nombre de lista por pendiente (vista "Todas"); undefined = no mostrar. */
+  listNameOf?: (i: Item) => string | undefined;
 }
 
 /**
@@ -40,7 +42,7 @@ interface Props {
  * o suelta en otra sección para cambiar la prioridad. Mientras arrastras,
  * aparecen también las secciones vacías para poder soltar ahí.
  */
-export function PriorityBoard({ groups, onToggle, onOpen, onDelete, onToggleUrgent, onMove }: Props) {
+export function PriorityBoard({ groups, onToggle, onOpen, onDelete, onToggleUrgent, onMove, listNameOf }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overGroup, setOverGroup] = useState<ItemPriority | null>(null);
   const sensors = useSensors(
@@ -106,12 +108,19 @@ export function PriorityBoard({ groups, onToggle, onOpen, onDelete, onToggleUrge
             onOpen={onOpen}
             onDelete={onDelete}
             onToggleUrgent={onToggleUrgent}
+            listNameOf={listNameOf}
           />
         ))}
       <DragOverlay dropAnimation={null}>
         {active ? (
           <div className="scale-[1.03] rounded-[var(--radius-card)] shadow-2xl">
-            <ItemCard item={active} onToggle={() => {}} onOpen={() => {}} handle={<GripIcon />} />
+            <ItemCard
+              item={active}
+              onToggle={() => {}}
+              onOpen={() => {}}
+              handle={<GripIcon />}
+              listName={listNameOf?.(active)}
+            />
           </div>
         ) : null}
       </DragOverlay>
@@ -128,6 +137,7 @@ function Section({
   onOpen,
   onDelete,
   onToggleUrgent,
+  listNameOf,
 }: {
   group: ItemGroup;
   highlight: boolean;
@@ -137,6 +147,7 @@ function Section({
   onOpen: (i: Item) => void;
   onDelete: (i: Item) => void;
   onToggleUrgent: (i: Item) => void;
+  listNameOf?: (i: Item) => string | undefined;
 }) {
   const { setNodeRef } = useDroppable({ id: groupDropId(group.priority) });
   const done = group.items.filter(isDone);
@@ -160,6 +171,7 @@ function Section({
             onOpen={() => onOpen(it)}
             onDelete={() => onDelete(it)}
             onToggleUrgent={() => onToggleUrgent(it)}
+            listName={listNameOf?.(it)}
           />
         ))}
       </SortableContext>
@@ -175,6 +187,7 @@ function Section({
           onToggle={() => onToggle(it)}
           onOpen={() => onOpen(it)}
           onDelete={() => onDelete(it)}
+          listName={listNameOf?.(it)}
         />
       ))}
     </section>
@@ -196,9 +209,11 @@ function SortableCard({
   onOpen,
   onDelete,
   onToggleUrgent,
+  listName,
 }: {
   item: Item;
   hidden: boolean;
+  listName?: string;
   onToggle: () => void;
   onOpen: () => void;
   onDelete: () => void;
@@ -218,6 +233,7 @@ function SortableCard({
         onOpen={onOpen}
         onDelete={hidden ? undefined : onDelete}
         onToggleUrgent={hidden ? undefined : onToggleUrgent}
+        listName={listName}
         handle={
           <button
             type="button"

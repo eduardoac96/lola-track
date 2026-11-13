@@ -27,8 +27,16 @@ export const SELECTABLE_TYPES = ['compra', 'tarea'] as const;
 
 export const isDone = (i: Pick<Item, 'done_at'>): boolean => i.done_at != null;
 
-export function itemMeta(i: Item): string {
+/** Lista seleccionada: todas, General (sin lista) o el id de una lista. */
+export type ListFilter = 'all' | 'general' | (string & {});
+
+export const inList = (i: Pick<Item, 'list_id'>, f: ListFilter): boolean =>
+  f === 'all' || (f === 'general' ? i.list_id == null : i.list_id === f);
+
+/** `listName`: se muestra cuando la vista mezcla listas ("Todas"). */
+export function itemMeta(i: Item, listName?: string): string {
   const parts: string[] = [TYPES[i.type].label];
+  if (listName) parts.push(listName);
   if (i.area) parts.push(i.area);
   const price = isDone(i) ? (i.price_actual_cents ?? i.price_estimated_cents) : i.price_estimated_cents;
   if (price != null) parts.push(fmtMXN(price));
@@ -54,12 +62,19 @@ export interface ItemGroup {
 }
 
 /**
- * Filtra por tipo/área, agrupa por prioridad (pendientes primero, hechos al final)
+ * Filtra por lista/tipo/área, agrupa por prioridad (pendientes primero, hechos al final)
  * y oculta los hechos de hace más de `hideDoneAfterDays` salvo que showAllDone.
  */
 export function groupItems(
   items: readonly Item[],
-  opts: { type: TypeFilter; area: string | null; showAllDone: boolean; now?: Date; hideDoneAfterDays?: number },
+  opts: {
+    type: TypeFilter;
+    area: string | null;
+    showAllDone: boolean;
+    list?: ListFilter;
+    now?: Date;
+    hideDoneAfterDays?: number;
+  },
 ): { groups: ItemGroup[]; hiddenDone: number } {
   const now = (opts.now ?? new Date()).getTime();
   const cutoff = now - (opts.hideDoneAfterDays ?? 14) * DAY_MS;
@@ -67,6 +82,7 @@ export function groupItems(
   let hiddenDone = 0;
 
   const visible = items.filter((i) => {
+    if (!inList(i, opts.list ?? 'all')) return false;
     if (!matchesType(i.type, opts.type)) return false;
     if (areaKey && i.area?.toLocaleLowerCase('es-MX') !== areaKey) return false;
     if (!opts.showAllDone && i.done_at && Date.parse(i.done_at) < cutoff) {
@@ -169,4 +185,22 @@ export function computeDrop(
     index = list.findIndex((i) => i.id === overId); // entra antes del pendiente sobre el que se suelta
   }
   return { priority: target, sort_order: sortOrderAt(list, index) };
+}
+
+const RESERVED_LIST_NAMES = ['general', 'todas'];
+const norm = (s: string) => s.trim().toLocaleLowerCase('es-MX');
+
+/** Valida el nombre de una lista contra las activas del hogar (sin repetir, sin nombres reservados). */
+export function listNameError(
+  name: string,
+  lists: ReadonlyArray<{ id: string; name: string; archived_at: string | null }>,
+  selfId?: string,
+): string | null {
+  const n = norm(name);
+  if (!n) return 'Escribe un nombre';
+  if (n.length > 40) return 'Máximo 40 letras';
+  if (RESERVED_LIST_NAMES.includes(n)) return `"${name.trim()}" ya existe`;
+  if (lists.some((l) => l.id !== selfId && !l.archived_at && norm(l.name) === n))
+    return 'Ya tienes una lista con ese nombre';
+  return null;
 }

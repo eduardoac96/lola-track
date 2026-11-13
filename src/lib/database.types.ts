@@ -276,6 +276,7 @@ export type Database = {
           household_id: string;
           id: string;
           link_url: string | null;
+          list_id: string | null;
           notes: string | null;
           photo_path: string | null;
           price_actual_cents: number | null;
@@ -298,6 +299,7 @@ export type Database = {
           household_id: string;
           id?: string;
           link_url?: string | null;
+          list_id?: string | null;
           notes?: string | null;
           photo_path?: string | null;
           price_actual_cents?: number | null;
@@ -320,6 +322,7 @@ export type Database = {
           household_id?: string;
           id?: string;
           link_url?: string | null;
+          list_id?: string | null;
           notes?: string | null;
           photo_path?: string | null;
           price_actual_cents?: number | null;
@@ -340,6 +343,47 @@ export type Database = {
           },
           {
             foreignKeyName: 'items_household_id_fkey';
+            columns: ['household_id'];
+            isOneToOne: false;
+            referencedRelation: 'households';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      lists: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          household_id: string;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          household_id: string;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          household_id?: string;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'lists_household_id_fkey';
             columns: ['household_id'];
             isOneToOne: false;
             referencedRelation: 'households';

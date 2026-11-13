@@ -18,6 +18,8 @@ export function useRealtime(hid: string | undefined, userId: string | undefined)
     const sb = supabase();
     const tables: Array<[string, QueryKey, QueryKey[]]> = [
       ['items', keys.items(hid), [keys.balances(hid)]],
+      // Al borrar una lista, la DB mueve sus pendientes a General: refrescar items.
+      ['lists', keys.lists(hid), [keys.items(hid)]],
       ['events', keys.events(hid), []],
       ['budget_movements', keys.movements(hid), [keys.balances(hid)]],
       ['budgets', keys.balances(hid), []],

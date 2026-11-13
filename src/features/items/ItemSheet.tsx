@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useApp } from '../../app/context';
 import { useUpdateItem, type Item, type ItemPriority, type ItemType } from '../../data/items';
+import { useLists } from '../../data/lists';
 import { removePhoto, uploadItemPhoto, usePhotoUrl } from '../../data/photos';
 import { centsToInput, parsePesos } from '../../lib/money';
 import { Sheet } from '../../ui/Sheet';
@@ -19,6 +20,7 @@ interface Draft {
   due: string;
   link: string;
   notes: string;
+  list: string; // '' = General
 }
 
 const toDraft = (i: Item): Draft => ({
@@ -31,6 +33,7 @@ const toDraft = (i: Item): Draft => ({
   due: i.due_date ?? '',
   link: i.link_url ?? '',
   notes: i.notes ?? '',
+  list: i.list_id ?? '',
 });
 
 export function ItemSheet({ item, onClose }: { item: Item | null; onClose: () => void }) {
@@ -40,6 +43,8 @@ export function ItemSheet({ item, onClose }: { item: Item | null; onClose: () =>
 function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
   const { hid, memberById } = useApp();
   const update = useUpdateItem(hid);
+  const lists = useLists(hid);
+  const activeLists = (lists.data ?? []).filter((l) => !l.archived_at || l.id === item.list_id);
   const removeWithUndo = useDeleteWithUndo();
   const [d, setD] = useState<Draft>(() => toDraft(item));
   const [more, setMore] = useState(Boolean(item.link_url || item.notes || item.due_date));
@@ -69,6 +74,7 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
         due_date: d.due || null,
         link_url: d.link.trim() || null,
         notes: d.notes.trim() || null,
+        list_id: d.list || null,
       },
     });
     onClose();
@@ -120,6 +126,18 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
         <Field label="Qué">
           <input className={inputCls} value={d.title} maxLength={200} onChange={(e) => set('title', e.target.value)} />
         </Field>
+        {activeLists.length > 0 && (
+          <Field label="Lista">
+            <select className={inputCls} value={d.list} onChange={(e) => set('list', e.target.value)}>
+              <option value="">General</option>
+              {activeLists.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <Segmented
           label="Tipo"
           size="sm"

@@ -4,6 +4,8 @@ import {
   areasOf,
   computeDrop,
   groupItems,
+  inList,
+  listNameError,
   itemMeta,
   pendingPurchasesCents,
   progressOf,
@@ -22,6 +24,7 @@ function item(p: Partial<Item>): Item {
     title: `Item ${n}`,
     priority: 'pronto',
     area: null,
+    list_id: null,
     price_estimated_cents: null,
     sort_order: n * 1000,
     price_actual_cents: null,
@@ -164,5 +167,45 @@ describe('items/select', () => {
       sort_order: 0,
     });
     expect(computeDrop({ urgente: [], pronto: [a], algun_dia: [] }, a.id, 'group:pronto')).toBeNull();
+  });
+});
+
+describe('listas', () => {
+  it('inList: todas, General (sin lista) y una lista', () => {
+    const a = item({ list_id: null });
+    const b = item({ list_id: 'posada' });
+    expect([a, b].filter((i) => inList(i, 'all'))).toHaveLength(2);
+    expect([a, b].filter((i) => inList(i, 'general'))).toEqual([a]);
+    expect([a, b].filter((i) => inList(i, 'posada'))).toEqual([b]);
+  });
+
+  it('groupItems filtra por lista', () => {
+    const a = item({ list_id: 'posada', priority: 'urgente' });
+    item({ list_id: null });
+    const { groups } = groupItems([a, item({ list_id: null })], {
+      type: 'todo',
+      area: null,
+      showAllDone: false,
+      list: 'posada',
+      now: NOW,
+    });
+    expect(groups.flatMap((g) => g.items)).toEqual([a]);
+  });
+
+  it('itemMeta muestra la lista cuando se le pasa', () => {
+    expect(itemMeta(item({ type: 'tarea' }), 'Posada')).toBe('Tarea · Posada');
+  });
+
+  it('listNameError: vacío, reservados y repetidos (sin contar archivadas ni a sí misma)', () => {
+    const lists = [
+      { id: '1', name: 'Posada', archived_at: null },
+      { id: '2', name: 'Mandado', archived_at: '2026-11-01T00:00:00Z' },
+    ];
+    expect(listNameError('  ', lists)).not.toBeNull();
+    expect(listNameError('general', lists)).not.toBeNull();
+    expect(listNameError(' posada ', lists)).not.toBeNull();
+    expect(listNameError('Posada', lists, '1')).toBeNull();
+    expect(listNameError('Mandado', lists)).toBeNull();
+    expect(listNameError('Fiesta fin de año', lists)).toBeNull();
   });
 });
