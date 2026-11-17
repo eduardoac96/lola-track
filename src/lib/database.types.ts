@@ -169,6 +169,117 @@ export type Database = {
           },
         ];
       };
+      fin_accounts: {
+        Row: {
+          balance_cents: number
+          created_at: string
+          household_id: string
+          id: string
+          kind: string
+          name: string
+          owner_id: string
+          sort_order: number
+          target_cents: number | null
+          updated_at: string
+        }
+        Insert: {
+          balance_cents?: number
+          created_at?: string
+          household_id: string
+          id?: string
+          kind: string
+          name: string
+          owner_id?: string
+          sort_order?: number
+          target_cents?: number | null
+          updated_at?: string
+        }
+        Update: {
+          balance_cents?: number
+          created_at?: string
+          household_id?: string
+          id?: string
+          kind?: string
+          name?: string
+          owner_id?: string
+          sort_order?: number
+          target_cents?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fin_checks: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          item_id: string
+          owner_id: string
+          period: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          item_id: string
+          owner_id?: string
+          period: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          item_id?: string
+          owner_id?: string
+          period?: string
+        }
+        Relationships: []
+      }
+      fin_items: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          done_at: string | null
+          grp: string
+          household_id: string
+          id: string
+          kind: string
+          name: string
+          owner_id: string
+          section: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          done_at?: string | null
+          grp: string
+          household_id: string
+          id?: string
+          kind?: string
+          name: string
+          owner_id?: string
+          section: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          done_at?: string | null
+          grp?: string
+          household_id?: string
+          id?: string
+          kind?: string
+          name?: string
+          owner_id?: string
+          section?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       household_invites: {
         Row: {
           code: string;

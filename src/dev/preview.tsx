@@ -1,6 +1,6 @@
 /**
  * Vista previa de pantallas con datos de ejemplo (solo dev, no entra al build).
- * http://localhost:5173/preview.html?screen=now|items|agenda|budget|wishes|login|onboarding  (&como=pareja: verlo como la pareja)
+ * http://localhost:5173/preview.html?screen=now|items|agenda|budget|finance|wishes|login|onboarding  (&como=pareja: verlo como la pareja)
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -21,6 +21,8 @@ import { AgendaScreen } from '../features/agenda/AgendaScreen';
 import { BudgetScreen } from '../features/budget/BudgetScreen';
 import { WishesScreen } from '../features/wishes/WishesScreen';
 import type { Wish, WishClaim } from '../data/wishes';
+import type { FinAccount, FinCheck, FinItem } from '../data/finance';
+import { currentPeriod, shiftPeriod } from '../features/finance/period';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { OnboardingScreen } from '../features/auth/OnboardingScreen';
 import { TabBar } from '../ui/TabBar';
@@ -278,11 +280,84 @@ const ctx: AppCtx = {
 };
 
 const screen = new URLSearchParams(location.search).get('screen') ?? 'now';
+
+// Mis finanzas (?screen=finance)
+localStorage.setItem('lola:budgetView', screen === 'finance' ? 'mio' : 'hogar');
+{
+  const fi = (
+    id: string,
+    section: string,
+    grp: string,
+    name: string,
+    pesos: number,
+    kind: string,
+    done = false,
+  ): FinItem => ({
+    id,
+    household_id: HID,
+    owner_id: ME,
+    section,
+    grp,
+    name,
+    amount_cents: pesos * 100,
+    kind,
+    sort_order: Number(id.slice(1)),
+    done_at: done ? at(-1, 9) : null,
+    created_at: at(-3, 9),
+    updated_at: at(-3, 9),
+  });
+  const finItems = [
+    fi('f1', 'quincena', '15', 'Camioneta', 5000, 'deuda'),
+    fi('f2', 'quincena', '15', 'Banamex', 800, 'deuda'),
+    fi('f3', 'quincena', '15', 'ATT', 2000, 'gasto'),
+    fi('f4', 'quincena', '15', 'Mandado', 2500, 'gasto'),
+    fi('f5', 'quincena', '15', 'Salidas', 3000, 'gasto'),
+    fi('f6', 'quincena', '15', 'Fondo de emergencia', 3000, 'ahorro'),
+    fi('f7', 'quincena', '30', 'Terreno', 3150, 'deuda'),
+    fi('f20', 'extra', 'Aguinaldo (dic)', 'Anualidad terreno', 12000, 'deuda', true),
+    fi('f21', 'extra', 'Aguinaldo (dic)', 'Hey (mínimo)', 8000, 'deuda'),
+    fi('f30', 'extra', 'Enero (fondo + wellness)', 'Fondo de emergencia', 30000, 'ahorro'),
+  ];
+  const p = currentPeriod(now);
+  const p15 = p.grp === '15' ? p : shiftPeriod(p, -1);
+  qc.setQueryData(keys.finItems(HID, ME), finItems);
+  qc.setQueryData<FinCheck[]>(keys.finChecks(HID, ME), [
+    { id: 'c1', household_id: HID, owner_id: ME, item_id: 'f1', period: p15.key, created_at: now.toISOString() },
+    { id: 'c2', household_id: HID, owner_id: ME, item_id: 'f2', period: p15.key, created_at: now.toISOString() },
+  ]);
+  qc.setQueryData<FinAccount[]>(keys.finAccounts(HID, ME), [
+    {
+      id: 'a1',
+      household_id: HID,
+      owner_id: ME,
+      name: 'Fondo de emergencia',
+      kind: 'meta',
+      balance_cents: 3_000_000,
+      target_cents: 9_000_000,
+      sort_order: 1,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    },
+    {
+      id: 'a2',
+      household_id: HID,
+      owner_id: ME,
+      name: 'Hey',
+      kind: 'deuda',
+      balance_cents: 3_000_000,
+      target_cents: null,
+      sort_order: 2,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    },
+  ]);
+}
 const paths: Record<string, string> = {
   now: '/',
   items: '/pendientes',
   agenda: '/agenda',
   budget: '/presupuesto',
+  finance: '/presupuesto',
   wishes: '/deseos',
 };
 const isApp = screen in paths;
@@ -307,7 +382,9 @@ createRoot(document.getElementById('root')!).render(
                   </Routes>
                 </div>
               </div>
-              {screen !== 'budget' && screen !== 'wishes' && <Fab label="Agregar pendiente" onClick={() => {}} />}
+              {screen !== 'budget' && screen !== 'finance' && screen !== 'wishes' && (
+                <Fab label="Agregar pendiente" onClick={() => {}} />
+              )}
               <TabBar />
               <Badge />
               <Celebrations hid={HID} />

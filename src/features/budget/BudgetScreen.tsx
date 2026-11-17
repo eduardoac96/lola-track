@@ -18,10 +18,49 @@ import { Sheet } from '../../ui/Sheet';
 import { SwipeRow } from '../../ui/SwipeRow';
 import { BudgetEditSheet, MovementSheet } from './BudgetSheets';
 import { Icon } from '../../ui/Icon';
-import { Avatar, EmptyCard, Field, PrimaryButton, Spinner, haptic, inputCls, useToast } from '../../ui/kit';
+import { Avatar, EmptyCard, Field, PrimaryButton, Segmented, Spinner, haptic, inputCls, useToast } from '../../ui/kit';
+import { FinanceView } from '../finance/FinanceView';
 import { AmountSheet, type AmountMode } from './AmountSheet';
 
+type BudgetView = 'hogar' | 'mio';
+const VIEW_KEY = 'lola:budgetView';
+function getView(): BudgetView {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'mio' ? 'mio' : 'hogar';
+  } catch {
+    return 'hogar';
+  }
+}
+
+/** Presupuesto del hogar (compartido) o Mis finanzas (privado). Recuerda la última vista por dispositivo. */
 export function BudgetScreen() {
+  const [view, setView] = useState<BudgetView>(getView);
+  const change = (v: BudgetView) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* modo privado */
+    }
+  };
+  return (
+    <main className="flex flex-col gap-4">
+      <h1 className="m-0 text-[30px] font-extrabold tracking-tight">Presupuesto</h1>
+      <Segmented
+        label="Presupuesto"
+        value={view}
+        onChange={change}
+        options={[
+          { value: 'hogar', label: 'Hogar' },
+          { value: 'mio', label: 'Mis finanzas' },
+        ]}
+      />
+      {view === 'hogar' ? <HouseholdBudget /> : <FinanceView />}
+    </main>
+  );
+}
+
+function HouseholdBudget() {
   const { hid, userId, memberById } = useApp();
   const balances = useBalances(hid);
   const movements = useMovements(hid);
@@ -69,9 +108,8 @@ export function BudgetScreen() {
   const negative = (current?.available_cents ?? 0) < 0;
 
   return (
-    <main className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-3">
-        <h1 className="m-0 text-[30px] font-extrabold tracking-tight">Presupuesto</h1>
         <div role="radiogroup" aria-label="Bolsas" className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
           {list.map((b) => {
             const on = b.budget_id === current?.budget_id;
@@ -211,7 +249,7 @@ export function BudgetScreen() {
           setCreating(false);
         }}
       />
-    </main>
+    </div>
   );
 }
 
