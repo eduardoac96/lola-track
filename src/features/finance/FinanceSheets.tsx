@@ -1,18 +1,25 @@
 import { useId, useState } from 'react';
 import { useApp } from '../../app/context';
 import {
+  accountDelta,
   newId,
+  useAccountMove,
   useDeleteAccount,
+  useDeleteMovement,
+  useFinAccounts,
   useDeleteFinItem,
   useSaveAccount,
   useSaveFinItem,
   type FinAccount,
   type FinItem,
   type FinKind,
+  type FinMovement,
 } from '../../data/finance';
-import { centsToInput, parsePesos } from '../../lib/money';
+import { dayKey } from '../../lib/dates';
+import { Icon } from '../../ui/Icon';
+import { centsToInput, fmtMXN, parsePesos } from '../../lib/money';
 import { Sheet } from '../../ui/Sheet';
-import { Field, GhostButton, PrimaryButton, Segmented, inputCls } from '../../ui/kit';
+import { Field, GhostButton, PrimaryButton, Segmented, haptic, inputCls, useToast } from '../../ui/kit';
 import type { PayDay } from './period';
 
 /** Editar una línea existente o crear una nueva (quincena o extra). */
@@ -140,10 +147,169 @@ function ItemForm({ draft, groups, onClose }: { draft: ItemDraft; groups: string
   );
 }
 
-export function AccountSheet({ account, onClose }: { account: FinAccount | 'new' | null; onClose: () => void }) {
-  return account ? (
-    <AccountForm key={account === 'new' ? 'new' : account.id} account={account} onClose={onClose} />
-  ) : null;
+export function AccountSheet({
+  account,
+  movements,
+  onClose,
+}: {
+  account: FinAccount | 'new' | null;
+  movements: FinMovement[];
+  onClose: () => void;
+}) {
+  if (!account) return null;
+  if (account === 'new') return <AccountForm key="new" account="new" onClose={onClose} />;
+  return <AccountDetail key={account.id} account={account} movements={movements} onClose={onClose} />;
+}
+
+const MOVE_LABELS = {
+  deuda: { abono: 'Abonar', cargo: 'Aumentar' },
+  meta: { abono: 'Depositar', cargo: 'Retirar' },
+} as const;
+const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const fmtShort = (iso: string) => {
+  const [, m, d] = iso.split('-').map(Number);
+  return `${d} ${MONTHS[(m ?? 1) - 1]}`;
+};
+
+/** Saldo con historial: abonar/cargar mueve el saldo vía RPC; borrar un movimiento lo revierte. */
+function AccountDetail({
+  account: initial,
+  movements,
+  onClose,
+}: {
+  account: FinAccount;
+  movements: FinMovement[];
+  onClose: () => void;
+}) {
+  const { hid, userId } = useApp();
+  const accounts = useFinAccounts(hid, userId);
+  const account = accounts.data?.find((a) => a.id === initial.id) ?? initial;
+  const move = useAccountMove(hid, userId);
+  const unmove = useDeleteMovement(hid, userId);
+  const toast = useToast();
+  const kind = account.kind === 'meta' ? 'meta' : 'deuda';
+  const [mode, setMode] = useState<'abono' | 'cargo' | null>(null);
+  const [amount, setAmount] = useState('');
+  const [concept, setConcept] = useState('');
+  const [date, setDate] = useState(() => dayKey(new Date()));
+  const [editing, setEditing] = useState(false);
+  const cents = parsePesos(amount);
+  const history = movements.filter((m) => m.account_id === account.id);
+  const tooBig = mode != null && cents != null && account.balance_cents + accountDelta(kind, mode, cents) < 0;
+  const valid = mode != null && cents != null && cents > 0 && !tooBig;
+  const fail = (e: unknown) => toast({ text: e instanceof Error ? e.message : 'No se pudo guardar' });
+
+  if (editing) return <AccountForm account={account} onClose={onClose} />;
+
+  return (
+    <Sheet
+      open
+      onClose={onClose}
+      title={account.name}
+      footer={
+        mode ? (
+          <PrimaryButton
+            disabled={!valid}
+            onClick={() => {
+              if (!valid || cents == null) return;
+              haptic();
+              move.mutate(
+                { id: newId(), account, direction: mode, amount_cents: cents, concept, occurred_on: date },
+                { onError: fail },
+              );
+              setMode(null);
+              setAmount('');
+              setConcept('');
+            }}
+          >
+            {MOVE_LABELS[kind][mode]}
+          </PrimaryButton>
+        ) : (
+          <GhostButton onClick={() => setEditing(true)}>Editar nombre o meta</GhostButton>
+        )
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-[13px] font-bold text-muted">{kind === 'meta' ? 'Llevas' : 'Debes'}</span>
+          <span className="text-[36px] leading-none font-extrabold">{fmtMXN(account.balance_cents)}</span>
+          {kind === 'meta' && account.target_cents && (
+            <span className="text-[13px] font-semibold text-muted">de {fmtMXN(account.target_cents)}</span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {(['abono', 'cargo'] as const).map((d) => (
+            <button
+              key={d}
+              type="button"
+              aria-pressed={mode === d}
+              onClick={() => setMode((p) => (p === d ? null : d))}
+              className={`min-h-12 rounded-[14px] text-[15px] font-bold ${
+                mode === d ? 'bg-hero text-white' : 'border border-line bg-card'
+              }`}
+            >
+              {MOVE_LABELS[kind][d]}
+            </button>
+          ))}
+        </div>
+        {mode && (
+          <>
+            <Field label="Monto">
+              <input
+                className={inputCls}
+                inputMode="decimal"
+                autoFocus
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="$0"
+              />
+            </Field>
+            {tooBig && <span className="text-[13px] font-bold text-gasto">Es más que el saldo.</span>}
+            <Field label="Nota (opcional)">
+              <input className={inputCls} maxLength={80} value={concept} onChange={(e) => setConcept(e.target.value)} />
+            </Field>
+            <Field label="Fecha">
+              <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} />
+            </Field>
+          </>
+        )}
+        {history.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="text-[13px] font-bold text-muted">Historial</span>
+            <ul className="m-0 flex list-none flex-col overflow-hidden rounded-[16px] border border-line p-0">
+              {history.map((m, n) => {
+                const dir = m.direction === 'cargo' ? 'cargo' : 'abono';
+                const delta = accountDelta(kind, dir, m.amount_cents);
+                return (
+                  <li
+                    key={m.id}
+                    className={`flex items-center gap-2 py-1 pl-3 ${n === history.length - 1 ? '' : 'border-b border-line-soft'}`}
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-[14px] font-bold">{m.concept ?? MOVE_LABELS[kind][dir]}</span>
+                      <span className="text-[12px] font-semibold text-muted">{fmtShort(m.occurred_on)}</span>
+                    </span>
+                    <span className="text-[14px] font-extrabold">
+                      {delta < 0 ? '−' : '+'}
+                      {fmtMXN(m.amount_cents)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Borrar movimiento"
+                      onClick={() => unmove.mutate(m, { onError: fail })}
+                      className="flex size-11 items-center justify-center text-muted"
+                    >
+                      <Icon name="trash" size={18} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </Sheet>
+  );
 }
 
 function AccountForm({ account, onClose }: { account: FinAccount | 'new'; onClose: () => void }) {

@@ -72,3 +72,61 @@ export function pct(part: number, whole: number): number {
   if (whole <= 0) return 0;
   return Math.max(0, Math.min(100, (part / whole) * 100));
 }
+
+const MONTH_NAMES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+] as const;
+
+/** 'noviembre 2026' */
+export function monthLabel(year: number, month: number): string {
+  const d = new Date(year, month, 1);
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+export interface CategoryRow {
+  category: string;
+  spent: number;
+  /** Lo planeado al mes: suma de las líneas de quincena con el mismo nombre (0 si no hay). */
+  planned: number;
+}
+
+/**
+ * Gastos de un mes: total y por categoría (las sin categoría van como "Otros").
+ * Ordena por lo gastado, mayor primero.
+ */
+export function monthSpending(
+  movements: ReadonlyArray<{ direction: string; amount_cents: number; category: string | null; occurred_on: string }>,
+  lines: ReadonlyArray<{ section: string; name: string; amount_cents: number }>,
+  year: number,
+  month: number,
+): { total: number; rows: CategoryRow[] } {
+  const prefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
+  const planned = new Map<string, number>();
+  for (const l of lines) {
+    if (l.section !== 'quincena') continue;
+    planned.set(l.name, (planned.get(l.name) ?? 0) + l.amount_cents);
+  }
+  const spent = new Map<string, number>();
+  let total = 0;
+  for (const m of movements) {
+    if (m.direction !== 'gasto' || !m.occurred_on.startsWith(prefix)) continue;
+    const c = m.category?.trim() || 'Otros';
+    spent.set(c, (spent.get(c) ?? 0) + m.amount_cents);
+    total += m.amount_cents;
+  }
+  const rows = [...spent.entries()]
+    .map(([category, s]) => ({ category, spent: s, planned: planned.get(category) ?? 0 }))
+    .sort((a, b) => b.spent - a.spent);
+  return { total, rows };
+}

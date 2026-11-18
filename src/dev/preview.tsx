@@ -21,7 +21,8 @@ import { AgendaScreen } from '../features/agenda/AgendaScreen';
 import { BudgetScreen } from '../features/budget/BudgetScreen';
 import { WishesScreen } from '../features/wishes/WishesScreen';
 import type { Wish, WishClaim } from '../data/wishes';
-import type { FinAccount, FinCheck, FinItem } from '../data/finance';
+import { dayKey } from '../lib/dates';
+import type { FinAccount, FinCheck, FinItem, FinMovement } from '../data/finance';
 import { currentPeriod, shiftPeriod } from '../features/finance/period';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { OnboardingScreen } from '../features/auth/OnboardingScreen';
@@ -324,6 +325,45 @@ localStorage.setItem('lola:budgetView', screen === 'finance' ? 'mio' : 'hogar');
   qc.setQueryData<FinCheck[]>(keys.finChecks(HID, ME), [
     { id: 'c1', household_id: HID, owner_id: ME, item_id: 'f1', period: p15.key, created_at: now.toISOString() },
     { id: 'c2', household_id: HID, owner_id: ME, item_id: 'f2', period: p15.key, created_at: now.toISOString() },
+  ]);
+  const today = dayKey(now);
+  qc.setQueryData<FinMovement[]>(keys.finMovements(HID, ME), [
+    {
+      id: 'm1',
+      household_id: HID,
+      owner_id: ME,
+      account_id: null,
+      direction: 'gasto',
+      amount_cents: 84_000,
+      concept: 'Soriana',
+      category: 'Mandado',
+      occurred_on: today,
+      created_at: now.toISOString(),
+    },
+    {
+      id: 'm2',
+      household_id: HID,
+      owner_id: ME,
+      account_id: null,
+      direction: 'gasto',
+      amount_cents: 35_000,
+      concept: 'Tacos',
+      category: 'Salidas',
+      occurred_on: today,
+      created_at: now.toISOString(),
+    },
+    {
+      id: 'm3',
+      household_id: HID,
+      owner_id: ME,
+      account_id: 'a2',
+      direction: 'abono',
+      amount_cents: 800_000,
+      concept: 'Mínimo',
+      category: null,
+      occurred_on: today,
+      created_at: now.toISOString(),
+    },
   ]);
   qc.setQueryData<FinAccount[]>(keys.finAccounts(HID, ME), [
     {

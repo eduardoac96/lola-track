@@ -242,3 +242,158 @@ export function useDeleteAccount(hid: string, uid: string) {
 }
 
 export { newId };
+
+// ───────────────────────── Movimientos: gastos sueltos y abonos/cargos a cuentas
+export type FinMovement = Tables<'fin_movements'>;
+
+export function useFinMovements(hid: string, uid: string) {
+  return useQuery({
+    queryKey: keys.finMovements(hid, uid),
+    queryFn: async (): Promise<FinMovement[]> => {
+      const { data, error } = await supabase()
+        .from('fin_movements')
+        .select('*')
+        .eq('household_id', hid)
+        .eq('owner_id', uid)
+        .order('occurred_on', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(3000);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/** Gasto suelto (insert directo; RLS solo permite direction = 'gasto'). */
+export function useAddGasto(hid: string, uid: string) {
+  const qc = useQueryClient();
+  const key = keys.finMovements(hid, uid);
+  return useMutation({
+    mutationFn: async (v: {
+      id: string;
+      amount_cents: number;
+      concept: string | null;
+      category: string | null;
+      occurred_on: string;
+    }) => {
+      const { data, error } = await supabase()
+        .from('fin_movements')
+        .insert({ ...v, household_id: hid, owner_id: uid, direction: 'gasto', account_id: null })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async (v) => {
+      const snap = await snapshot<FinMovement[]>(qc, key);
+      qc.setQueryData<FinMovement[]>(key, (prev) =>
+        prev
+          ? [
+              {
+                ...v,
+                household_id: hid,
+                owner_id: uid,
+                direction: 'gasto',
+                account_id: null,
+                created_at: new Date().toISOString(),
+              },
+              ...prev,
+            ]
+          : prev,
+      );
+      return snap;
+    },
+    onError: (_e, _v, snap) => restore(qc, snap),
+    onSuccess: (row) => upsertInList(qc, key, row, false),
+  });
+}
+
+/** Borra un movimiento: gasto directo; abono/cargo por RPC para revertir el saldo. */
+export function useDeleteMovement(hid: string, uid: string) {
+  const qc = useQueryClient();
+  const key = keys.finMovements(hid, uid);
+  return useMutation({
+    mutationFn: async (m: FinMovement) => {
+      if (m.account_id) {
+        const { data, error } = await supabase().rpc('fin_account_unmove', { p_movement: m.id });
+        if (error) throw error;
+        return data;
+      }
+      const { error } = await supabase().from('fin_movements').delete().eq('id', m.id);
+      if (error) throw error;
+      return null;
+    },
+    onMutate: async (m) => {
+      const snap = await snapshot<FinMovement[]>(qc, key);
+      removeFromList(qc, key, m.id);
+      return snap;
+    },
+    onError: (_e, _v, snap) => restore(qc, snap),
+    onSuccess: (account) => {
+      if (account) upsertInList(qc, keys.finAccounts(hid, uid), account, false);
+    },
+  });
+}
+
+/** Abono (deuda baja / meta sube) o cargo (al revés). Atómico vía RPC. */
+export function useAccountMove(hid: string, uid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      id: string;
+      account: FinAccount;
+      direction: 'abono' | 'cargo';
+      amount_cents: number;
+      concept: string;
+      occurred_on: string;
+    }) => {
+      const { data, error } = await supabase().rpc('fin_account_move', {
+        p_id: v.id,
+        p_account: v.account.id,
+        p_direction: v.direction,
+        p_amount_cents: v.amount_cents,
+        p_concept: v.concept,
+        p_occurred_on: v.occurred_on,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async (v) => {
+      const accKey = keys.finAccounts(hid, uid);
+      const movKey = keys.finMovements(hid, uid);
+      const snapA = await snapshot<FinAccount[]>(qc, accKey);
+      const snapM = await snapshot<FinMovement[]>(qc, movKey);
+      const delta = accountDelta(v.account.kind, v.direction, v.amount_cents);
+      upsertInList<FinAccount>(qc, accKey, { ...v.account, balance_cents: v.account.balance_cents + delta });
+      qc.setQueryData<FinMovement[]>(movKey, (prev) =>
+        prev
+          ? [
+              {
+                id: v.id,
+                household_id: hid,
+                owner_id: uid,
+                account_id: v.account.id,
+                direction: v.direction,
+                amount_cents: v.amount_cents,
+                concept: v.concept.trim() || null,
+                category: null,
+                occurred_on: v.occurred_on,
+                created_at: new Date().toISOString(),
+              },
+              ...prev,
+            ]
+          : prev,
+      );
+      return [snapA, snapM] as const;
+    },
+    onError: (_e, _v, snaps) => {
+      if (snaps) for (const s of snaps) restore(qc, s);
+    },
+    onSuccess: (account) => upsertInList(qc, keys.finAccounts(hid, uid), account, false),
+  });
+}
+
+/** Efecto de un movimiento en el saldo: deuda baja con abono, meta sube con abono. */
+export function accountDelta(kind: string, direction: 'abono' | 'cargo', amount: number): number {
+  return (kind === 'deuda') === (direction === 'abono') ? -amount : amount;
+}

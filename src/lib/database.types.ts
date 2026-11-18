@@ -171,115 +171,154 @@ export type Database = {
       };
       fin_accounts: {
         Row: {
-          balance_cents: number
-          created_at: string
-          household_id: string
-          id: string
-          kind: string
-          name: string
-          owner_id: string
-          sort_order: number
-          target_cents: number | null
-          updated_at: string
-        }
+          balance_cents: number;
+          created_at: string;
+          household_id: string;
+          id: string;
+          kind: string;
+          name: string;
+          owner_id: string;
+          sort_order: number;
+          target_cents: number | null;
+          updated_at: string;
+        };
         Insert: {
-          balance_cents?: number
-          created_at?: string
-          household_id: string
-          id?: string
-          kind: string
-          name: string
-          owner_id?: string
-          sort_order?: number
-          target_cents?: number | null
-          updated_at?: string
-        }
+          balance_cents?: number;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          kind: string;
+          name: string;
+          owner_id?: string;
+          sort_order?: number;
+          target_cents?: number | null;
+          updated_at?: string;
+        };
         Update: {
-          balance_cents?: number
-          created_at?: string
-          household_id?: string
-          id?: string
-          kind?: string
-          name?: string
-          owner_id?: string
-          sort_order?: number
-          target_cents?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          balance_cents?: number;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          kind?: string;
+          name?: string;
+          owner_id?: string;
+          sort_order?: number;
+          target_cents?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       fin_checks: {
         Row: {
-          created_at: string
-          household_id: string
-          id: string
-          item_id: string
-          owner_id: string
-          period: string
-        }
+          created_at: string;
+          household_id: string;
+          id: string;
+          item_id: string;
+          owner_id: string;
+          period: string;
+        };
         Insert: {
-          created_at?: string
-          household_id: string
-          id?: string
-          item_id: string
-          owner_id?: string
-          period: string
-        }
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          item_id: string;
+          owner_id?: string;
+          period: string;
+        };
         Update: {
-          created_at?: string
-          household_id?: string
-          id?: string
-          item_id?: string
-          owner_id?: string
-          period?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          item_id?: string;
+          owner_id?: string;
+          period?: string;
+        };
+        Relationships: [];
+      };
       fin_items: {
         Row: {
-          amount_cents: number
-          created_at: string
-          done_at: string | null
-          grp: string
-          household_id: string
-          id: string
-          kind: string
-          name: string
-          owner_id: string
-          section: string
-          sort_order: number
-          updated_at: string
-        }
+          amount_cents: number;
+          created_at: string;
+          done_at: string | null;
+          grp: string;
+          household_id: string;
+          id: string;
+          kind: string;
+          name: string;
+          owner_id: string;
+          section: string;
+          sort_order: number;
+          updated_at: string;
+        };
         Insert: {
-          amount_cents?: number
-          created_at?: string
-          done_at?: string | null
-          grp: string
-          household_id: string
-          id?: string
-          kind?: string
-          name: string
-          owner_id?: string
-          section: string
-          sort_order?: number
-          updated_at?: string
-        }
+          amount_cents?: number;
+          created_at?: string;
+          done_at?: string | null;
+          grp: string;
+          household_id: string;
+          id?: string;
+          kind?: string;
+          name: string;
+          owner_id?: string;
+          section: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
         Update: {
-          amount_cents?: number
-          created_at?: string
-          done_at?: string | null
-          grp?: string
-          household_id?: string
-          id?: string
-          kind?: string
-          name?: string
-          owner_id?: string
-          section?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          amount_cents?: number;
+          created_at?: string;
+          done_at?: string | null;
+          grp?: string;
+          household_id?: string;
+          id?: string;
+          kind?: string;
+          name?: string;
+          owner_id?: string;
+          section?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      fin_movements: {
+        Row: {
+          account_id: string | null;
+          amount_cents: number;
+          category: string | null;
+          concept: string | null;
+          created_at: string;
+          direction: string;
+          household_id: string;
+          id: string;
+          occurred_on: string;
+          owner_id: string;
+        };
+        Insert: {
+          account_id?: string | null;
+          amount_cents: number;
+          category?: string | null;
+          concept?: string | null;
+          created_at?: string;
+          direction: string;
+          household_id: string;
+          id?: string;
+          occurred_on?: string;
+          owner_id?: string;
+        };
+        Update: {
+          account_id?: string | null;
+          amount_cents?: number;
+          category?: string | null;
+          concept?: string | null;
+          created_at?: string;
+          direction?: string;
+          household_id?: string;
+          id?: string;
+          occurred_on?: string;
+          owner_id?: string;
+        };
+        Relationships: [];
+      };
       household_invites: {
         Row: {
           code: string;
@@ -668,6 +707,21 @@ export type Database = {
           starts_at: string;
           title: string;
         }[];
+      };
+      fin_account_move: {
+        Args: {
+          p_account: string;
+          p_amount_cents: number;
+          p_concept: string;
+          p_direction: string;
+          p_id: string;
+          p_occurred_on: string;
+        };
+        Returns: Database['public']['Tables']['fin_accounts']['Row'];
+      };
+      fin_account_unmove: {
+        Args: { p_movement: string };
+        Returns: Database['public']['Tables']['fin_accounts']['Row'];
       };
       is_member: { Args: { h: string }; Returns: boolean };
       join_household: {

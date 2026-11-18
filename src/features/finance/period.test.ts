@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { currentPeriod, makePeriod, pct, periodLabel, shiftPeriod, summarize } from './period';
+import {
+  currentPeriod,
+  makePeriod,
+  monthLabel,
+  monthSpending,
+  pct,
+  periodLabel,
+  shiftPeriod,
+  summarize,
+} from './period';
 
 describe('currentPeriod', () => {
   it('del 15 al 29 es la quincena del 15', () => {
@@ -48,5 +57,31 @@ describe('summarize / pct', () => {
     expect(pct(50, 200)).toBe(25);
     expect(pct(300, 200)).toBe(100);
     expect(pct(1, 0)).toBe(0);
+  });
+});
+
+describe('monthSpending', () => {
+  const lines = [
+    { section: 'quincena', name: 'Mandado', amount_cents: 250000 },
+    { section: 'quincena', name: 'Mandado', amount_cents: 250000 },
+    { section: 'extra', name: 'Mandado', amount_cents: 999 },
+  ];
+  const mv = [
+    { direction: 'gasto', amount_cents: 100000, category: 'Mandado', occurred_on: '2026-11-03' },
+    { direction: 'gasto', amount_cents: 50000, category: null, occurred_on: '2026-11-20' },
+    { direction: 'gasto', amount_cents: 70000, category: 'Mandado', occurred_on: '2026-12-01' },
+    { direction: 'abono', amount_cents: 900000, category: null, occurred_on: '2026-11-05' },
+  ];
+  it('suma solo gastos del mes, por categoría, contra lo planeado de la quincena', () => {
+    expect(monthSpending(mv, lines, 2026, 10)).toEqual({
+      total: 150000,
+      rows: [
+        { category: 'Mandado', spent: 100000, planned: 500000 },
+        { category: 'Otros', spent: 50000, planned: 0 },
+      ],
+    });
+  });
+  it('etiqueta de mes', () => {
+    expect(monthLabel(2026, 12)).toBe('enero 2027');
   });
 });

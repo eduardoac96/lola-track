@@ -5,6 +5,7 @@ import {
   useFinAccounts,
   useFinChecks,
   useFinItems,
+  useFinMovements,
   useSaveFinItem,
   useToggleCheck,
   type FinAccount,
@@ -16,6 +17,7 @@ import { Icon } from '../../ui/Icon';
 import { EmptyCard, Segmented, Spinner, haptic } from '../../ui/kit';
 import { currentPeriod, pct, periodLabel, shiftPeriod, summarize, type PayDay, type Period } from './period';
 import { AccountSheet, ItemEditSheet, type ItemDraft } from './FinanceSheets';
+import { GastosView } from './GastosView';
 
 /** Mis finanzas: solo el dueño ve estas filas (RLS por owner_id). */
 export function FinanceView() {
@@ -23,10 +25,11 @@ export function FinanceView() {
   const items = useFinItems(hid, userId);
   const checks = useFinChecks(hid, userId);
   const accounts = useFinAccounts(hid, userId);
+  const movements = useFinMovements(hid, userId);
   const toggle = useToggleCheck(hid, userId);
   const save = useSaveFinItem(hid, userId);
   const [period, setPeriod] = useState<Period>(() => currentPeriod(new Date()));
-  const [tab, setTab] = useState<'quincena' | 'extras' | 'saldos'>('quincena');
+  const [tab, setTab] = useState<'quincena' | 'gastos' | 'extras' | 'saldos'>('quincena');
   const [draft, setDraft] = useState<ItemDraft | null>(null);
   const [account, setAccount] = useState<FinAccount | 'new' | null>(null);
 
@@ -61,6 +64,7 @@ export function FinanceView() {
         onChange={setTab}
         options={[
           { value: 'quincena', label: 'Quincena' },
+          { value: 'gastos', label: 'Gastos' },
           { value: 'extras', label: 'Extras' },
           { value: 'saldos', label: 'Saldos' },
         ]}
@@ -127,6 +131,8 @@ export function FinanceView() {
         </>
       )}
 
+      {tab === 'gastos' && <GastosView movements={movements.data ?? []} lines={all} />}
+
       {tab === 'extras' && (
         <>
           {extras.length === 0 && (
@@ -173,7 +179,7 @@ export function FinanceView() {
       )}
 
       <ItemEditSheet draft={draft} groups={extras.map(([g]) => g)} onClose={() => setDraft(null)} />
-      <AccountSheet account={account} onClose={() => setAccount(null)} />
+      <AccountSheet account={account} movements={movements.data ?? []} onClose={() => setAccount(null)} />
     </div>
   );
 }
