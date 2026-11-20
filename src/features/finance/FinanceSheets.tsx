@@ -22,6 +22,8 @@ import { Sheet } from '../../ui/Sheet';
 import { Field, GhostButton, PrimaryButton, Segmented, haptic, inputCls, useToast } from '../../ui/kit';
 import type { PayDay } from './period';
 
+const NEW_GROUP = '__nuevo__';
+
 /** Editar una línea existente o crear una nueva (quincena o extra). */
 export type ItemDraft = { item: FinItem } | { section: 'quincena' | 'extra'; grp: string };
 
@@ -51,6 +53,10 @@ function ItemForm({ draft, groups, onClose }: { draft: ItemDraft; groups: string
   const [amount, setAmount] = useState(centsToInput(existing?.amount_cents));
   const [kind, setKind] = useState<FinKind>((existing?.kind as FinKind) ?? 'gasto');
   const [grp, setGrp] = useState(existing?.grp ?? ('grp' in draft ? draft.grp : '15'));
+  // Extras: dropdown con los grupos existentes; "Nuevo grupo…" abre un campo de texto.
+  const initialGrp = existing?.grp ?? ('grp' in draft ? draft.grp : '');
+  const groupOptions = initialGrp && !groups.includes(initialGrp) ? [initialGrp, ...groups] : groups;
+  const [newGrp, setNewGrp] = useState(section === 'extra' && groupOptions.length === 0);
   const cents = parsePesos(amount);
   const valid = name.trim().length > 0 && cents != null && grp.trim().length > 0;
 
@@ -127,19 +133,38 @@ function ItemForm({ draft, groups, onClose }: { draft: ItemDraft; groups: string
           />
         ) : (
           <Field label="Ingreso (grupo)">
-            <input
+            <select
+              id={listId}
               className={inputCls}
-              maxLength={40}
-              list={listId}
-              value={grp}
-              onChange={(e) => setGrp(e.target.value)}
-              placeholder="Aguinaldo (dic)"
-            />
-            <datalist id={listId}>
-              {groups.map((g) => (
-                <option key={g} value={g} />
+              value={newGrp ? NEW_GROUP : grp}
+              onChange={(e) => {
+                if (e.target.value === NEW_GROUP) {
+                  setNewGrp(true);
+                  setGrp('');
+                } else {
+                  setNewGrp(false);
+                  setGrp(e.target.value);
+                }
+              }}
+            >
+              {groupOptions.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
               ))}
-            </datalist>
+              <option value={NEW_GROUP}>Nuevo grupo…</option>
+            </select>
+            {newGrp && (
+              <input
+                className={`${inputCls} mt-2`}
+                aria-label="Nombre del nuevo grupo"
+                maxLength={40}
+                autoFocus
+                value={grp}
+                onChange={(e) => setGrp(e.target.value)}
+                placeholder="Aguinaldo (dic)"
+              />
+            )}
           </Field>
         )}
       </div>
