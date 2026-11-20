@@ -237,6 +237,7 @@ export type Database = {
       };
       fin_items: {
         Row: {
+          account_id: string | null;
           amount_cents: number;
           created_at: string;
           done_at: string | null;
@@ -251,6 +252,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          account_id?: string | null;
           amount_cents?: number;
           created_at?: string;
           done_at?: string | null;
@@ -265,6 +267,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          account_id?: string | null;
           amount_cents?: number;
           created_at?: string;
           done_at?: string | null;
@@ -290,8 +293,10 @@ export type Database = {
           direction: string;
           household_id: string;
           id: string;
+          item_id: string | null;
           occurred_on: string;
           owner_id: string;
+          period: string | null;
         };
         Insert: {
           account_id?: string | null;
@@ -302,8 +307,10 @@ export type Database = {
           direction: string;
           household_id: string;
           id?: string;
+          item_id?: string | null;
           occurred_on?: string;
           owner_id?: string;
+          period?: string | null;
         };
         Update: {
           account_id?: string | null;
@@ -314,7 +321,84 @@ export type Database = {
           direction?: string;
           household_id?: string;
           id?: string;
+          item_id?: string | null;
           occurred_on?: string;
+          owner_id?: string;
+          period?: string | null;
+        };
+        Relationships: [];
+      };
+      fin_plan_steps: {
+        Row: {
+          account_id: string | null;
+          created_at: string;
+          done_at: string | null;
+          due_month: string | null;
+          household_id: string;
+          id: string;
+          note: string | null;
+          owner_id: string;
+          sort_order: number;
+          target_cents: number | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          account_id?: string | null;
+          created_at?: string;
+          done_at?: string | null;
+          due_month?: string | null;
+          household_id: string;
+          id?: string;
+          note?: string | null;
+          owner_id?: string;
+          sort_order?: number;
+          target_cents?: number | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          account_id?: string | null;
+          created_at?: string;
+          done_at?: string | null;
+          due_month?: string | null;
+          household_id?: string;
+          id?: string;
+          note?: string | null;
+          owner_id?: string;
+          sort_order?: number;
+          target_cents?: number | null;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      fin_plan_points: {
+        Row: {
+          account_id: string;
+          created_at: string;
+          expected_cents: number;
+          household_id: string;
+          id: string;
+          month: string;
+          owner_id: string;
+        };
+        Insert: {
+          account_id: string;
+          created_at?: string;
+          expected_cents: number;
+          household_id: string;
+          id?: string;
+          month: string;
+          owner_id?: string;
+        };
+        Update: {
+          account_id?: string;
+          created_at?: string;
+          expected_cents?: number;
+          household_id?: string;
+          id?: string;
+          month?: string;
           owner_id?: string;
         };
         Relationships: [];
@@ -722,6 +806,10 @@ export type Database = {
       fin_account_unmove: {
         Args: { p_movement: string };
         Returns: Database['public']['Tables']['fin_accounts']['Row'];
+      };
+      fin_item_toggle: {
+        Args: { p_check_id: string | null; p_item: string; p_period: string | null };
+        Returns: Json;
       };
       is_member: { Args: { h: string }; Returns: boolean };
       join_household: {

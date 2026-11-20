@@ -6,8 +6,7 @@ import {
   useFinChecks,
   useFinItems,
   useFinMovements,
-  useSaveFinItem,
-  useToggleCheck,
+  useToggleItem,
   type FinAccount,
   type FinCheck,
   type FinItem,
@@ -18,6 +17,7 @@ import { EmptyCard, Segmented, Spinner, haptic } from '../../ui/kit';
 import { currentPeriod, pct, periodLabel, shiftPeriod, summarize, type PayDay, type Period } from './period';
 import { AccountSheet, ItemEditSheet, type ItemDraft } from './FinanceSheets';
 import { GastosView } from './GastosView';
+import { CaminoView } from './CaminoView';
 
 /** Mis finanzas: solo el dueño ve estas filas (RLS por owner_id). */
 export function FinanceView() {
@@ -26,14 +26,18 @@ export function FinanceView() {
   const checks = useFinChecks(hid, userId);
   const accounts = useFinAccounts(hid, userId);
   const movements = useFinMovements(hid, userId);
-  const toggle = useToggleCheck(hid, userId);
-  const save = useSaveFinItem(hid, userId);
+  const toggle = useToggleItem(hid, userId);
   const [period, setPeriod] = useState<Period>(() => currentPeriod(new Date()));
-  const [tab, setTab] = useState<'quincena' | 'gastos' | 'extras' | 'saldos'>('quincena');
+  const [tab, setTab] = useState<'camino' | 'quincena' | 'gastos' | 'extras' | 'saldos'>('camino');
   const [draft, setDraft] = useState<ItemDraft | null>(null);
   const [account, setAccount] = useState<FinAccount | 'new' | null>(null);
 
   const all = useMemo(() => items.data ?? [], [items.data]);
+  const accountName = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const a of accounts.data ?? []) m.set(a.id, a.name);
+    return (i: FinItem) => (i.account_id ? m.get(i.account_id) : undefined);
+  }, [accounts.data]);
   const lines = useMemo(() => all.filter((i) => i.section === 'quincena' && i.grp === period.grp), [all, period.grp]);
   const checkByItem = useMemo(() => {
     const m = new Map<string, FinCheck>();
@@ -63,12 +67,15 @@ export function FinanceView() {
         value={tab}
         onChange={setTab}
         options={[
+          { value: 'camino', label: 'Camino' },
           { value: 'quincena', label: 'Quincena' },
           { value: 'gastos', label: 'Gastos' },
           { value: 'extras', label: 'Extras' },
           { value: 'saldos', label: 'Saldos' },
         ]}
       />
+
+      {tab === 'camino' && <CaminoView accounts={accounts.data ?? []} />}
 
       {tab === 'quincena' && (
         <>
@@ -120,9 +127,10 @@ export function FinanceView() {
             isDone={(i) => checkByItem.has(i.id)}
             onToggle={(i) => {
               haptic();
-              toggle.mutate({ itemId: i.id, period: period.key, existing: checkByItem.get(i.id), id: newId() });
+              toggle.mutate({ item: i, period: period.key, existing: checkByItem.get(i.id), id: newId() });
             }}
             onOpen={(i) => setDraft({ item: i })}
+            accountOf={accountName}
           />
           <AddButton
             label={`Agregar al ${period.grp === '15' ? '15' : '30'}`}
@@ -153,9 +161,10 @@ export function FinanceView() {
                   isDone={(i) => !!i.done_at}
                   onToggle={(i) => {
                     haptic();
-                    save.mutate({ id: i.id, isNew: false, done_at: i.done_at ? null : new Date().toISOString() });
+                    toggle.mutate({ item: i, period: null, existing: undefined, id: newId() });
                   }}
                   onOpen={(i) => setDraft({ item: i })}
+                  accountOf={accountName}
                 />
               </section>
             );
@@ -195,17 +204,20 @@ function LineList({
   isDone,
   onToggle,
   onOpen,
+  accountOf,
 }: {
   rows: FinItem[];
   isDone: (i: FinItem) => boolean;
   onToggle: (i: FinItem) => void;
   onOpen: (i: FinItem) => void;
+  accountOf: (i: FinItem) => string | undefined;
 }) {
   if (rows.length === 0) return <EmptyCard>Sin líneas.</EmptyCard>;
   return (
     <ul className="m-0 flex list-none flex-col overflow-hidden rounded-[20px] border border-line bg-card p-0">
       {rows.map((i, n) => {
         const done = isDone(i);
+        const acc = accountOf(i);
         return (
           <li
             key={i.id}
@@ -236,8 +248,11 @@ function LineList({
                 style={{ background: KIND_DOT[i.kind] }}
                 aria-hidden="true"
               />
-              <span className={`flex-1 truncate text-[15px] font-bold ${done ? 'text-muted line-through' : ''}`}>
-                {i.name}
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className={`truncate text-[15px] font-bold ${done ? 'text-muted line-through' : ''}`}>
+                  {i.name}
+                </span>
+                {acc && <span className="truncate text-[12px] font-semibold text-muted">Abona a {acc}</span>}
               </span>
               <span className={`text-[15px] font-extrabold ${done ? 'text-muted' : ''}`}>{fmtMXN(i.amount_cents)}</span>
             </button>

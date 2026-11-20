@@ -118,6 +118,7 @@ export function useSaveFinItem(hid: string, uid: string) {
               name: row.name ?? '',
               amount_cents: row.amount_cents ?? 0,
               kind: row.kind ?? 'gasto',
+              account_id: row.account_id ?? null,
               sort_order: row.sort_order ?? Date.now(),
             })
         : supabase()
@@ -127,6 +128,7 @@ export function useSaveFinItem(hid: string, uid: string) {
               amount_cents: row.amount_cents,
               kind: row.kind,
               grp: row.grp,
+              account_id: row.account_id,
               done_at: row.done_at,
             })
             .eq('id', row.id);
@@ -152,6 +154,7 @@ export function useSaveFinItem(hid: string, uid: string) {
                   amount_cents: 0,
                   kind: 'gasto',
                   sort_order: Date.now(),
+                  account_id: null,
                   done_at: null,
                   created_at: now,
                   updated_at: now,
@@ -295,6 +298,8 @@ export function useAddGasto(hid: string, uid: string) {
                 owner_id: uid,
                 direction: 'gasto',
                 account_id: null,
+                item_id: null,
+                period: null,
                 created_at: new Date().toISOString(),
               },
               ...prev,
@@ -377,6 +382,8 @@ export function useAccountMove(hid: string, uid: string) {
                 amount_cents: v.amount_cents,
                 concept: v.concept.trim() || null,
                 category: null,
+                item_id: null,
+                period: null,
                 occurred_on: v.occurred_on,
                 created_at: new Date().toISOString(),
               },
@@ -396,4 +403,119 @@ export function useAccountMove(hid: string, uid: string) {
 /** Efecto de un movimiento en el saldo: deuda baja con abono, meta sube con abono. */
 export function accountDelta(kind: string, direction: 'abono' | 'cargo', amount: number): number {
   return (kind === 'deuda') === (direction === 'abono') ? -amount : amount;
+}
+
+// ───────────────────────── Marcar líneas (con abono automático si están ligadas a una cuenta)
+
+/**
+ * Marca o desmarca una línea vía RPC: quincena → fin_checks del periodo; extra → done_at.
+ * Si la línea tiene cuenta, el RPC abona (o revierte) en la misma transacción.
+ */
+export function useToggleItem(hid: string, uid: string) {
+  const qc = useQueryClient();
+  const checksKey = keys.finChecks(hid, uid);
+  const itemsKey = keys.finItems(hid, uid);
+  return useMutation({
+    mutationFn: async (v: { item: FinItem; period: string | null; existing: FinCheck | undefined; id: string }) => {
+      const { error } = await supabase().rpc('fin_item_toggle', {
+        p_item: v.item.id,
+        p_period: v.item.section === 'quincena' ? v.period : null,
+        p_check_id: v.id,
+      });
+      if (error) throw error;
+    },
+    onMutate: async (v) => {
+      const snapC = await snapshot<FinCheck[]>(qc, checksKey);
+      const snapI = await snapshot<FinItem[]>(qc, itemsKey);
+      if (v.item.section === 'quincena' && v.period) {
+        if (v.existing) removeFromList(qc, checksKey, v.existing.id);
+        else
+          upsertInList<FinCheck>(qc, checksKey, {
+            id: v.id,
+            household_id: hid,
+            owner_id: uid,
+            item_id: v.item.id,
+            period: v.period,
+            created_at: new Date().toISOString(),
+          });
+      } else {
+        upsertInList<FinItem>(qc, itemsKey, { ...v.item, done_at: v.item.done_at ? null : new Date().toISOString() });
+      }
+      return [snapC, snapI] as const;
+    },
+    onError: (_e, _v, snaps) => {
+      if (snaps) for (const s of snaps) restore(qc, s);
+    },
+    onSettled: (_d, _e, v) => {
+      if (v.item.section === 'quincena') void qc.invalidateQueries({ queryKey: checksKey });
+      else void qc.invalidateQueries({ queryKey: itemsKey });
+      if (v.item.account_id) {
+        void qc.invalidateQueries({ queryKey: keys.finAccounts(hid, uid) });
+        void qc.invalidateQueries({ queryKey: keys.finMovements(hid, uid) });
+      }
+    },
+  });
+}
+
+// ───────────────────────── Camino: hitos y saldo esperado por mes
+export type FinPlanStep = Tables<'fin_plan_steps'>;
+export type FinPlanPoint = Tables<'fin_plan_points'>;
+
+export function useFinPlanSteps(hid: string, uid: string) {
+  return useQuery({
+    queryKey: keys.finPlanSteps(hid, uid),
+    queryFn: async (): Promise<FinPlanStep[]> => {
+      const { data, error } = await supabase()
+        .from('fin_plan_steps')
+        .select('*')
+        .eq('household_id', hid)
+        .eq('owner_id', uid)
+        .order('sort_order')
+        .limit(200);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useFinPlanPoints(hid: string, uid: string) {
+  return useQuery({
+    queryKey: keys.finPlanPoints(hid, uid),
+    queryFn: async (): Promise<FinPlanPoint[]> => {
+      const { data, error } = await supabase()
+        .from('fin_plan_points')
+        .select('*')
+        .eq('household_id', hid)
+        .eq('owner_id', uid)
+        .order('month')
+        .limit(2000);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/** Palomea a mano un hito sin cuenta (los que tienen cuenta se cumplen solos con el saldo). */
+export function useToggleStep(hid: string, uid: string) {
+  const qc = useQueryClient();
+  const key = keys.finPlanSteps(hid, uid);
+  return useMutation({
+    mutationFn: async (s: FinPlanStep) => {
+      const { data, error } = await supabase()
+        .from('fin_plan_steps')
+        .update({ done_at: s.done_at ? null : new Date().toISOString() })
+        .eq('id', s.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async (s) => {
+      const snap = await snapshot<FinPlanStep[]>(qc, key);
+      upsertInList<FinPlanStep>(qc, key, { ...s, done_at: s.done_at ? null : new Date().toISOString() });
+      return snap;
+    },
+    onError: (_e, _v, snap) => restore(qc, snap),
+    onSuccess: (row) => upsertInList(qc, key, row, false),
+  });
 }

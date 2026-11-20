@@ -17,6 +17,8 @@ export const keys = {
   finChecks: (hid: string, uid: string) => ['fin_checks', hid, uid] as const,
   finAccounts: (hid: string, uid: string) => ['fin_accounts', hid, uid] as const,
   finMovements: (hid: string, uid: string) => ['fin_movements', hid, uid] as const,
+  finPlanSteps: (hid: string, uid: string) => ['fin_plan_steps', hid, uid] as const,
+  finPlanPoints: (hid: string, uid: string) => ['fin_plan_points', hid, uid] as const,
 };
 
 /** Inserta o reemplaza por id (dedupe para ecos de Realtime y optimistic updates). */

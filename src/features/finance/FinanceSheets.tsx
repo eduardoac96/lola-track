@@ -52,6 +52,9 @@ function ItemForm({ draft, groups, onClose }: { draft: ItemDraft; groups: string
   const [name, setName] = useState(existing?.name ?? '');
   const [amount, setAmount] = useState(centsToInput(existing?.amount_cents));
   const [kind, setKind] = useState<FinKind>((existing?.kind as FinKind) ?? 'gasto');
+  const accounts = useFinAccounts(hid, userId);
+  const [accountId, setAccountId] = useState(existing?.account_id ?? '');
+  const [more, setMore] = useState(!!existing?.account_id);
   const [grp, setGrp] = useState(existing?.grp ?? ('grp' in draft ? draft.grp : '15'));
   // Extras: dropdown con los grupos existentes; "Nuevo grupo…" abre un campo de texto.
   const initialGrp = existing?.grp ?? ('grp' in draft ? draft.grp : '');
@@ -70,6 +73,7 @@ function ItemForm({ draft, groups, onClose }: { draft: ItemDraft; groups: string
       name: name.trim(),
       amount_cents: cents,
       kind,
+      account_id: accountId || null,
     });
     onClose();
   };
@@ -165,6 +169,26 @@ function ItemForm({ draft, groups, onClose }: { draft: ItemDraft; groups: string
                 placeholder="Aguinaldo (dic)"
               />
             )}
+          </Field>
+        )}
+        {!more ? (
+          <button
+            type="button"
+            className="h-11 self-start text-[14px] font-bold text-primary-hover"
+            onClick={() => setMore(true)}
+          >
+            Más detalles
+          </button>
+        ) : (
+          <Field label="Abona a" hint="Al marcarla se abona sola a esa deuda o meta.">
+            <select className={inputCls} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+              <option value="">Ninguna</option>
+              {(accounts.data ?? []).map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
           </Field>
         )}
       </div>

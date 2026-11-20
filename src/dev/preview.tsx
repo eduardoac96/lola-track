@@ -22,7 +22,7 @@ import { BudgetScreen } from '../features/budget/BudgetScreen';
 import { WishesScreen } from '../features/wishes/WishesScreen';
 import type { Wish, WishClaim } from '../data/wishes';
 import { dayKey } from '../lib/dates';
-import type { FinAccount, FinCheck, FinItem, FinMovement } from '../data/finance';
+import type { FinAccount, FinCheck, FinItem, FinMovement, FinPlanPoint, FinPlanStep } from '../data/finance';
 import { currentPeriod, shiftPeriod } from '../features/finance/period';
 import { LoginScreen } from '../features/auth/LoginScreen';
 import { OnboardingScreen } from '../features/auth/OnboardingScreen';
@@ -303,6 +303,7 @@ localStorage.setItem('lola:budgetView', screen === 'finance' ? 'mio' : 'hogar');
     amount_cents: pesos * 100,
     kind,
     sort_order: Number(id.slice(1)),
+    account_id: null,
     done_at: done ? at(-1, 9) : null,
     created_at: at(-3, 9),
     updated_at: at(-3, 9),
@@ -337,6 +338,8 @@ localStorage.setItem('lola:budgetView', screen === 'finance' ? 'mio' : 'hogar');
       amount_cents: 84_000,
       concept: 'Soriana',
       category: 'Mandado',
+      item_id: null,
+      period: null,
       occurred_on: today,
       created_at: now.toISOString(),
     },
@@ -349,6 +352,8 @@ localStorage.setItem('lola:budgetView', screen === 'finance' ? 'mio' : 'hogar');
       amount_cents: 35_000,
       concept: 'Tacos',
       category: 'Salidas',
+      item_id: null,
+      period: null,
       occurred_on: today,
       created_at: now.toISOString(),
     },
@@ -361,6 +366,8 @@ localStorage.setItem('lola:budgetView', screen === 'finance' ? 'mio' : 'hogar');
       amount_cents: 800_000,
       concept: 'Mínimo',
       category: null,
+      item_id: null,
+      period: null,
       occurred_on: today,
       created_at: now.toISOString(),
     },
@@ -390,6 +397,52 @@ localStorage.setItem('lola:budgetView', screen === 'finance' ? 'mio' : 'hogar');
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
     },
+  ]);
+  const mk = (offset: number) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  };
+  const step = (
+    id: string,
+    title: string,
+    off: number | null,
+    account_id: string | null,
+    target: number | null,
+  ): FinPlanStep => ({
+    id,
+    household_id: HID,
+    owner_id: ME,
+    title,
+    note: null,
+    due_month: off == null ? null : mk(off),
+    account_id,
+    target_cents: target,
+    done_at: null,
+    sort_order: Number(id.slice(1)),
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
+  });
+  qc.setQueryData<FinPlanStep[]>(keys.finPlanSteps(HID, ME), [
+    { ...step('s1', 'Repartir aguinaldo', -1, null, null), done_at: now.toISOString() },
+    step('s2', 'Hey en $0', 2, 'a2', 0),
+    step('s3', 'Fondo de emergencia $90k', 9, 'a1', 9_000_000),
+  ]);
+  const pt = (id: string, account_id: string, off: number, pesos: number): FinPlanPoint => ({
+    id,
+    household_id: HID,
+    owner_id: ME,
+    account_id,
+    month: mk(off),
+    expected_cents: pesos * 100,
+    created_at: now.toISOString(),
+  });
+  qc.setQueryData<FinPlanPoint[]>(keys.finPlanPoints(HID, ME), [
+    pt('p1', 'a1', -1, 28_000),
+    pt('p2', 'a2', -1, 30_000),
+    pt('p3', 'a1', 0, 33_000),
+    pt('p4', 'a2', 0, 22_000),
+    pt('p5', 'a1', 1, 38_000),
+    pt('p6', 'a2', 1, 2_000),
   ]);
 }
 const paths: Record<string, string> = {
