@@ -4,6 +4,7 @@
 // 2) Pendientes cuya fecha llegó (desde las 8:00) → un push por hogar con la lista.
 // 3) Domingo desde las 19:00 → resumen semanal por hogar (weekly_digests / last_weekly_digest).
 // 4) Urgentes sin hacer → un push por hogar a las 8:00, 13:00 y 19:00 (urgent_reminders / last_urgent_reminder).
+// 5) Listas de regalos: ≤7 días para la fecha del evento y regalos sin comprar → un push por lista (gift_list_reminders / event_reminded_at).
 // Cada aviso se "reclama" antes de enviarse (reminded_at / due_reminded_at) para no duplicar.
 // Llaves VAPID: secrets de la función si existen; si no, Vault vía get_push_config().
 // Cada aviso lleva `badge` = urgentes sin hacer, para el número del ícono.
@@ -53,6 +54,17 @@ export function urgentPayload(titles: string[], slot: string) {
     body: listText(titles),
     url: '/pendientes',
     tag: `urgentes-${slot}`,
+  };
+}
+
+/** Aviso de lista de regalos: "Faltan 7 días para Navidad 2026" · "3 regalos sin comprar". */
+export function giftPayload(g: { list_id: string; name: string; days_left: number; pending: number }) {
+  const when = g.days_left === 0 ? 'Hoy es' : g.days_left === 1 ? 'Mañana es' : `Faltan ${g.days_left} días para`;
+  return {
+    title: `${when} ${g.name}`,
+    body: g.pending === 1 ? '1 regalo sin comprar' : `${g.pending} regalos sin comprar`,
+    url: '/pendientes',
+    tag: `gifts-${g.list_id}`,
   };
 }
 
@@ -210,5 +222,21 @@ Deno.serve(async (req) => {
     await sendToHousehold(sb, u.household_id, urgentPayload(u.titles, u.slot), stats);
   }
 
-  return json({ events, dueHouseholds, digests, urgent, ...stats });
+  // 5) Listas de regalos (una vez por fecha; cambiar la fecha rearma el aviso)
+  let gifts = 0;
+  const { data: giftRows } = await sb.rpc('gift_list_reminders');
+  for (const g of giftRows ?? []) {
+    const { data: claimed } = await sb
+      .from('lists')
+      .update({ event_reminded_at: new Date().toISOString() })
+      .eq('id', g.list_id)
+      .is('event_reminded_at', null)
+      .select('id')
+      .maybeSingle();
+    if (!claimed) continue;
+    gifts++;
+    await sendToHousehold(sb, g.household_id, giftPayload(g), stats);
+  }
+
+  return json({ events, dueHouseholds, digests, urgent, gifts, ...stats });
 });

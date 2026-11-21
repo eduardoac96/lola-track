@@ -45,6 +45,10 @@ export function useCreateList(hid: string, userId: string) {
           ...input,
           household_id: hid,
           archived_at: null,
+          budget_id: null,
+          is_gift: false,
+          event_date: null,
+          event_reminded_at: null,
           created_by: userId,
           created_at: now,
           updated_at: now,
@@ -95,6 +99,22 @@ export function useDeleteList(hid: string) {
     },
     onError: (_e, _v, snap) => restore(qc, snap),
     onSettled: () => qc.invalidateQueries({ queryKey: keys.items(hid) }),
+  });
+}
+
+/** Duplica una lista de regalos (personas y topes, fecha +1 año, sin pendientes ni bolsa). */
+export function useDuplicateList(hid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { id: string; name: string }) => {
+      const { data, error } = await supabase().rpc('duplicate_list', { p_list: v.id, p_name: v.name });
+      if (error) throw error;
+      return data;
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: keys.lists(hid) });
+      qc.invalidateQueries({ queryKey: keys.listPeople(hid) });
+    },
   });
 }
 

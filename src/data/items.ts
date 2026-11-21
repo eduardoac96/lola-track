@@ -66,6 +66,8 @@ export function useCreateItem(hid: string, userId: string) {
         done_by: null,
         due_date: null,
         due_reminded_at: null,
+        gift_stage: null,
+        recipient: null,
         link_url: null,
         list_id: null,
         notes: null,
@@ -204,7 +206,7 @@ export function useReopenItem(hid: string) {
     },
     onMutate: async (id) => {
       const snap = await snapshot<Item[]>(qc, key);
-      upsertInList(qc, key, { id, done_at: null, done_by: null, budget_movement_id: null } as Item);
+      upsertInList(qc, key, { id, done_at: null, done_by: null, budget_movement_id: null, gift_stage: null } as Item);
       return snap;
     },
     onError: (_e, _v, snap) => restore(qc, snap),

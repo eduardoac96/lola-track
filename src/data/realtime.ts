@@ -20,6 +20,7 @@ export function useRealtime(hid: string | undefined, userId: string | undefined)
       ['items', keys.items(hid), [keys.balances(hid)]],
       // Al borrar una lista, la DB mueve sus pendientes a General: refrescar items.
       ['lists', keys.lists(hid), [keys.items(hid)]],
+      ['list_people', keys.listPeople(hid), []],
       ['events', keys.events(hid), []],
       ['budget_movements', keys.movements(hid), [keys.balances(hid)]],
       ['budgets', keys.balances(hid), []],

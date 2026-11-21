@@ -11,8 +11,11 @@ export function QuickAdd({
   onCreated,
   autoFocus,
   listId = null,
+  gift = false,
   placeholder = 'Cuna $4500 !urgente @cuarto',
 }: {
+  /** Lista de regalos: todo es compra y @nombre es "Para quién" (no área). */
+  gift?: boolean;
   onCreated?: () => void;
   autoFocus?: boolean;
   /** Lista donde cae lo capturado (null = General). */
@@ -31,9 +34,10 @@ export function QuickAdd({
     create.mutate({
       id: newId(),
       title: parsed.title,
-      type: parsed.type,
+      type: gift ? 'compra' : parsed.type,
       priority: parsed.priority,
-      area: parsed.area,
+      area: gift ? null : parsed.area,
+      recipient: gift && parsed.area ? parsed.area.slice(0, 40) : null,
       price_estimated_cents: parsed.priceCents,
       sort_order: -Date.now(),
       list_id: listId,
@@ -45,6 +49,7 @@ export function QuickAdd({
 
   const prio = PRIORITIES.find((p) => p.value === parsed.priority);
   const showPreview = text.trim().length > 0;
+  const type = gift ? 'compra' : parsed.type;
 
   return (
     <div className="flex flex-col gap-2">
@@ -78,8 +83,8 @@ export function QuickAdd({
       </form>
       {showPreview ? (
         <div className="flex flex-wrap gap-1.5 px-1" aria-live="polite">
-          <Chip bg={TYPES[parsed.type].tint} fg={TYPES[parsed.type].fg}>
-            {TYPES[parsed.type].label}
+          <Chip bg={TYPES[type].tint} fg={TYPES[type].fg}>
+            {TYPES[type].label}
           </Chip>
           {prio && (
             <Chip bg="var(--color-card)" fg="var(--color-ink)">
@@ -94,13 +99,21 @@ export function QuickAdd({
           )}
           {parsed.area && (
             <Chip bg="var(--color-card)" fg="var(--color-ink)">
-              @{parsed.area}
+              {gift ? `Para ${parsed.area}` : `@${parsed.area}`}
             </Chip>
           )}
         </div>
       ) : (
         <p className="m-0 px-1 text-[12px] font-medium text-muted">
-          <b>$precio</b> la vuelve compra · <b>!urgente</b> <b>!pronto</b> <b>!algun</b> · <b>@área</b>
+          {gift ? (
+            <>
+              <b>$precio</b> · <b>@nombre</b> para quién · <b>!urgente</b>
+            </>
+          ) : (
+            <>
+              <b>$precio</b> la vuelve compra · <b>!urgente</b> <b>!pronto</b> <b>!algun</b> · <b>@área</b>
+            </>
+          )}
         </p>
       )}
     </div>

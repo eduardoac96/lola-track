@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import { useApp } from '../../app/context';
-import { useUpdateItem, type Item, type ItemPriority, type ItemType } from '../../data/items';
+import { useItems, useUpdateItem, type Item, type ItemPriority, type ItemType } from '../../data/items';
 import { useLists } from '../../data/lists';
+import { useListPeople } from '../../data/listPeople';
+import { GIFT_STAGES, stageOf, type GiftStage } from './gifts';
 import { removePhoto, uploadItemPhoto, usePhotoUrl } from '../../data/photos';
 import { centsToInput, parsePesos } from '../../lib/money';
 import { Sheet } from '../../ui/Sheet';
@@ -21,6 +23,8 @@ interface Draft {
   link: string;
   notes: string;
   list: string; // '' = General
+  recipient: string;
+  stage: GiftStage;
 }
 
 const toDraft = (i: Item): Draft => ({
@@ -34,6 +38,8 @@ const toDraft = (i: Item): Draft => ({
   link: i.link_url ?? '',
   notes: i.notes ?? '',
   list: i.list_id ?? '',
+  recipient: i.recipient ?? '',
+  stage: stageOf(i),
 });
 
 export function ItemSheet({ item, onClose }: { item: Item | null; onClose: () => void }) {
@@ -45,6 +51,8 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
   const update = useUpdateItem(hid);
   const lists = useLists(hid);
   const activeLists = (lists.data ?? []).filter((l) => !l.archived_at || l.id === item.list_id);
+  const people = useListPeople(hid);
+  const items = useItems(hid);
   const removeWithUndo = useDeleteWithUndo();
   const [d, setD] = useState<Draft>(() => toDraft(item));
   const [more, setMore] = useState(Boolean(item.link_url || item.notes || item.due_date));
@@ -54,6 +62,13 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
   const photo = usePhotoUrl(item?.photo_path);
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD({ ...d, [k]: v });
+  const gift = (lists.data ?? []).some((l) => l.id === d.list && l.is_gift);
+  const suggestions = [
+    ...new Set([
+      ...(people.data ?? []).filter((p) => p.list_id === d.list).map((p) => p.name),
+      ...(items.data ?? []).filter((i) => i.list_id === d.list && i.recipient).map((i) => i.recipient!.trim()),
+    ]),
+  ];
 
   const estCents = parsePesos(d.est);
   const actCents = parsePesos(d.actual);
@@ -75,6 +90,8 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
         link_url: d.link.trim() || null,
         notes: d.notes.trim() || null,
         list_id: d.list || null,
+        recipient: gift ? d.recipient.trim() || null : item.recipient,
+        ...(gift && isDone(item) && d.stage !== 'idea' ? { gift_stage: d.stage === 'comprado' ? null : d.stage } : {}),
       },
     });
     onClose();
@@ -137,6 +154,33 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
               ))}
             </select>
           </Field>
+        )}
+        {gift && (
+          <Field label="Para quién">
+            <input
+              className={inputCls}
+              value={d.recipient}
+              maxLength={40}
+              placeholder="Mamá"
+              autoComplete="off"
+              list={`people-${item.id}`}
+              onChange={(e) => set('recipient', e.target.value)}
+            />
+            <datalist id={`people-${item.id}`}>
+              {suggestions.map((n) => (
+                <option key={n} value={n} />
+              ))}
+            </datalist>
+          </Field>
+        )}
+        {gift && isDone(item) && (
+          <Segmented
+            label="Estado del regalo"
+            size="sm"
+            value={d.stage}
+            onChange={(v) => set('stage', v)}
+            options={GIFT_STAGES.filter((g) => g.value !== 'idea').map((g) => ({ value: g.value, label: g.label }))}
+          />
         )}
         <Segmented
           label="Tipo"

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../../app/context';
 import { useCompleteItem, useReopenItem, type Item } from '../../data/items';
 import { getLastBudget, setLastBudget, useBalances } from '../../data/budgets';
+import { useLists } from '../../data/lists';
 import { centsToInput, fmtMXN, parsePesos } from '../../lib/money';
 import { Sheet } from '../../ui/Sheet';
 import { Field, GhostButton, PrimaryButton, haptic, inputCls } from '../../ui/kit';
@@ -51,12 +52,20 @@ function CompleteSheet(props: CompleteProps) {
 function CompleteForm({ item, onClose, onConfirm }: CompleteProps & { item: Item }) {
   const { hid } = useApp();
   const balances = useBalances(hid);
+  const lists = useLists(hid);
+  // La bolsa ligada a la lista del pendiente gana sobre la última usada.
+  const listBudget = lists.data?.find((l) => l.id === item.list_id)?.budget_id ?? null;
   const [price, setPrice] = useState(() => centsToInput(item.price_estimated_cents));
   const [picked, setPicked] = useState<string | null>(null);
 
   const list = balances.data ?? [];
   const last = getLastBudget();
-  const budgetId = picked ?? list.find((b) => b.budget_id === last)?.budget_id ?? list[0]?.budget_id ?? null;
+  const budgetId =
+    picked ??
+    list.find((b) => b.budget_id === listBudget)?.budget_id ??
+    list.find((b) => b.budget_id === last)?.budget_id ??
+    list[0]?.budget_id ??
+    null;
   const cents = parsePesos(price);
   const budget = list.find((b) => b.budget_id === budgetId);
 
@@ -71,7 +80,7 @@ function CompleteForm({ item, onClose, onConfirm }: CompleteProps & { item: Item
             tone="gasto"
             disabled={!cents || !budget}
             onClick={() => {
-              if (budget) setLastBudget(budget.budget_id);
+              if (budget && budget.budget_id !== listBudget) setLastBudget(budget.budget_id);
               onConfirm({ actualCents: cents, budgetId: budget?.budget_id ?? null });
             }}
           >

@@ -507,6 +507,7 @@ export type Database = {
           done_by: string | null;
           due_date: string | null;
           due_reminded_at: string | null;
+          gift_stage: string | null;
           household_id: string;
           id: string;
           link_url: string | null;
@@ -516,6 +517,7 @@ export type Database = {
           price_actual_cents: number | null;
           price_estimated_cents: number | null;
           priority: Database['public']['Enums']['item_priority'];
+          recipient: string | null;
           sort_order: number;
           title: string;
           type: Database['public']['Enums']['item_type'];
@@ -530,6 +532,7 @@ export type Database = {
           done_by?: string | null;
           due_date?: string | null;
           due_reminded_at?: string | null;
+          gift_stage?: string | null;
           household_id: string;
           id?: string;
           link_url?: string | null;
@@ -539,6 +542,7 @@ export type Database = {
           price_actual_cents?: number | null;
           price_estimated_cents?: number | null;
           priority?: Database['public']['Enums']['item_priority'];
+          recipient?: string | null;
           sort_order?: number;
           title: string;
           type?: Database['public']['Enums']['item_type'];
@@ -553,6 +557,7 @@ export type Database = {
           done_by?: string | null;
           due_date?: string | null;
           due_reminded_at?: string | null;
+          gift_stage?: string | null;
           household_id?: string;
           id?: string;
           link_url?: string | null;
@@ -562,6 +567,7 @@ export type Database = {
           price_actual_cents?: number | null;
           price_estimated_cents?: number | null;
           priority?: Database['public']['Enums']['item_priority'];
+          recipient?: string | null;
           sort_order?: number;
           title?: string;
           type?: Database['public']['Enums']['item_type'];
@@ -584,33 +590,75 @@ export type Database = {
           },
         ];
       };
+      list_people: {
+        Row: {
+          cap_cents: number | null;
+          created_at: string;
+          household_id: string;
+          id: string;
+          list_id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          cap_cents?: number | null;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          list_id: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          cap_cents?: number | null;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          list_id?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       lists: {
         Row: {
           archived_at: string | null;
+          budget_id: string | null;
           created_at: string;
           created_by: string | null;
+          event_date: string | null;
+          event_reminded_at: string | null;
           household_id: string;
           id: string;
+          is_gift: boolean;
           name: string;
           sort_order: number;
           updated_at: string;
         };
         Insert: {
           archived_at?: string | null;
+          budget_id?: string | null;
           created_at?: string;
           created_by?: string | null;
+          event_date?: string | null;
+          event_reminded_at?: string | null;
           household_id: string;
           id?: string;
+          is_gift?: boolean;
           name: string;
           sort_order?: number;
           updated_at?: string;
         };
         Update: {
           archived_at?: string | null;
+          budget_id?: string | null;
           created_at?: string;
           created_by?: string | null;
+          event_date?: string | null;
+          event_reminded_at?: string | null;
           household_id?: string;
           id?: string;
+          is_gift?: boolean;
           name?: string;
           sort_order?: number;
           updated_at?: string;
@@ -772,6 +820,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      duplicate_list: {
+        Args: { p_list: string; p_name: string };
+        Returns: string;
       };
       create_budget: {
         Args: { p_household: string; p_initial_cents?: number; p_name: string };

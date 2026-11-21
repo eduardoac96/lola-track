@@ -37,6 +37,7 @@ export const inList = (i: Pick<Item, 'list_id'>, f: ListFilter): boolean =>
 export function itemMeta(i: Item, listName?: string): string {
   const parts: string[] = [TYPES[i.type].label];
   if (listName) parts.push(listName);
+  if (i.recipient) parts.push(`Para ${i.recipient}`);
   if (i.area) parts.push(i.area);
   const price = isDone(i) ? (i.price_actual_cents ?? i.price_estimated_cents) : i.price_estimated_cents;
   if (price != null) parts.push(fmtMXN(price));

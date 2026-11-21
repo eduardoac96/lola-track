@@ -6,6 +6,7 @@ export const keys = {
   household: (userId: string | undefined) => ['household', userId] as const,
   items: (hid: string) => ['items', hid] as const,
   lists: (hid: string) => ['lists', hid] as const,
+  listPeople: (hid: string) => ['list_people', hid] as const,
   events: (hid: string) => ['events', hid] as const,
   balances: (hid: string) => ['balances', hid] as const,
   movements: (hid: string) => ['movements', hid] as const,

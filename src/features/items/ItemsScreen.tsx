@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../../app/context';
-import { useItems, type Item } from '../../data/items';
+import { useItems, useUpdateItem, type Item } from '../../data/items';
 import { useLists, type List } from '../../data/lists';
 import { Icon } from '../../ui/Icon';
 import { fmtMXN } from '../../lib/money';
@@ -15,10 +15,13 @@ import { areasOf, groupItems, inList, isDone, pendingPurchasesCents, type ListFi
 import { ListSheet } from './ListSheet';
 import { captureListId, resolveListFilter, useSelectedList } from './selectedList';
 import { useItemToggle } from './useItemToggle';
+import { GiftPeople, ListBudgetBar } from './ListExtras';
+import { nextStage, stageOf } from './gifts';
 
 export function ItemsScreen() {
   const { hid } = useApp();
   const items = useItems(hid);
+  const updateItem = useUpdateItem(hid);
   const lists = useLists(hid);
   const [rawList, setList] = useSelectedList(hid);
   const [listSheet, setListSheet] = useState<'new' | List | null>(null);
@@ -52,6 +55,14 @@ export function ItemsScreen() {
     }
     setList(f);
     setArea(null);
+  };
+  const giftLists = useMemo(() => new Set(active.filter((l) => l.is_gift).map((l) => l.id)), [active]);
+  const isGiftItem = (i: Item) => i.list_id != null && giftLists.has(i.list_id);
+  const advanceStage = (i: Item) => {
+    const s = stageOf(i);
+    const next = nextStage(s);
+    // Entregado → vuelve a Comprado (por si fue un toque de más)
+    updateItem.mutate({ id: i.id, patch: { gift_stage: next ?? null } });
   };
   const open: Item | null = all.find((i) => i.id === openId) ?? null;
 
@@ -117,7 +128,13 @@ export function ItemsScreen() {
           </div>
         )}
 
-        <QuickAdd listId={captureListId(list)} placeholder={current ? `Agregar a ${current.name}…` : undefined} />
+        <QuickAdd
+          listId={captureListId(list)}
+          gift={current?.is_gift ?? false}
+          placeholder={current?.is_gift ? 'Lego $800 @Mamá' : current ? `Agregar a ${current.name}…` : undefined}
+        />
+
+        {current?.is_gift && <GiftPeople list={current} items={inSel} />}
 
         <Segmented
           label="Filtrar por tipo"
@@ -153,12 +170,16 @@ export function ItemsScreen() {
           </div>
         )}
 
-        <div className="order-last flex items-center justify-between rounded-[var(--radius-card)] bg-hero px-4 py-3.5 text-white md:order-none">
-          <span className="truncate text-[13px] font-semibold text-on-hero">
-            Compras pendientes{current ? ` · ${current.name}` : list === 'general' ? ' · General' : ''}
-          </span>
-          <span className="text-[18px] font-extrabold">{fmtMXN(pendingPurchasesCents(inSel))}</span>
-        </div>
+        {current?.budget_id ? (
+          <ListBudgetBar list={current} items={inSel} />
+        ) : (
+          <div className="order-last flex items-center justify-between rounded-[var(--radius-card)] bg-hero px-4 py-3.5 text-white md:order-none">
+            <span className="truncate text-[13px] font-semibold text-on-hero">
+              Compras pendientes{current ? ` · ${current.name}` : list === 'general' ? ' · General' : ''}
+            </span>
+            <span className="text-[18px] font-extrabold">{fmtMXN(pendingPurchasesCents(inSel))}</span>
+          </div>
+        )}
       </div>
 
       <div className="contents md:flex md:flex-col md:gap-4">
@@ -187,6 +208,8 @@ export function ItemsScreen() {
             onToggleUrgent={priority.toggleUrgent}
             onMove={(it, p, sortOrder) => priority.set(it, p, sortOrder)}
             listNameOf={listNameOf}
+            stageOf={(i) => (isGiftItem(i) ? stageOf(i) : undefined)}
+            onAdvanceStage={advanceStage}
           />
         )}
 

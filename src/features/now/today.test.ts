@@ -13,6 +13,8 @@ const item = (p: Partial<Item>): Item => ({
   priority: 'pronto',
   area: null,
   list_id: null,
+  gift_stage: null,
+  recipient: null,
   price_estimated_cents: null,
   price_actual_cents: null,
   due_date: null,

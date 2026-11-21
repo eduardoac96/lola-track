@@ -24,6 +24,7 @@ import { Icon } from '../../ui/Icon';
 import { SectionTitle } from '../../ui/kit';
 import { ItemCard } from './ItemCard';
 import { PRIORITIES, computeDrop, groupDropId, isDone, type ItemGroup } from './select';
+import type { GiftStage } from './gifts';
 
 interface Props {
   groups: ItemGroup[];
@@ -35,6 +36,9 @@ interface Props {
   onMove: (i: Item, priority: ItemPriority, sortOrder: number) => void;
   /** Nombre de lista por pendiente (vista "Todas"); undefined = no mostrar. */
   listNameOf?: (i: Item) => string | undefined;
+  /** Estado de regalo si el pendiente es de una lista de regalos. */
+  stageOf?: (i: Item) => GiftStage | undefined;
+  onAdvanceStage?: (i: Item) => void;
 }
 
 /**
@@ -42,7 +46,17 @@ interface Props {
  * o suelta en otra sección para cambiar la prioridad. Mientras arrastras,
  * aparecen también las secciones vacías para poder soltar ahí.
  */
-export function PriorityBoard({ groups, onToggle, onOpen, onDelete, onToggleUrgent, onMove, listNameOf }: Props) {
+export function PriorityBoard({
+  groups,
+  onToggle,
+  onOpen,
+  onDelete,
+  onToggleUrgent,
+  onMove,
+  listNameOf,
+  stageOf,
+  onAdvanceStage,
+}: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overGroup, setOverGroup] = useState<ItemPriority | null>(null);
   const sensors = useSensors(
@@ -109,6 +123,8 @@ export function PriorityBoard({ groups, onToggle, onOpen, onDelete, onToggleUrge
             onDelete={onDelete}
             onToggleUrgent={onToggleUrgent}
             listNameOf={listNameOf}
+            stageOf={stageOf}
+            onAdvanceStage={onAdvanceStage}
           />
         ))}
       <DragOverlay dropAnimation={null}>
@@ -138,6 +154,8 @@ function Section({
   onDelete,
   onToggleUrgent,
   listNameOf,
+  stageOf,
+  onAdvanceStage,
 }: {
   group: ItemGroup;
   highlight: boolean;
@@ -148,6 +166,8 @@ function Section({
   onDelete: (i: Item) => void;
   onToggleUrgent: (i: Item) => void;
   listNameOf?: (i: Item) => string | undefined;
+  stageOf?: (i: Item) => GiftStage | undefined;
+  onAdvanceStage?: (i: Item) => void;
 }) {
   const { setNodeRef } = useDroppable({ id: groupDropId(group.priority) });
   const done = group.items.filter(isDone);
@@ -172,6 +192,7 @@ function Section({
             onDelete={() => onDelete(it)}
             onToggleUrgent={() => onToggleUrgent(it)}
             listName={listNameOf?.(it)}
+            stage={stageOf?.(it)}
           />
         ))}
       </SortableContext>
@@ -188,6 +209,8 @@ function Section({
           onOpen={() => onOpen(it)}
           onDelete={() => onDelete(it)}
           listName={listNameOf?.(it)}
+          stage={stageOf?.(it)}
+          onAdvanceStage={onAdvanceStage ? () => onAdvanceStage(it) : undefined}
         />
       ))}
     </section>
@@ -210,10 +233,12 @@ function SortableCard({
   onDelete,
   onToggleUrgent,
   listName,
+  stage,
 }: {
   item: Item;
   hidden: boolean;
   listName?: string;
+  stage?: GiftStage;
   onToggle: () => void;
   onOpen: () => void;
   onDelete: () => void;
@@ -234,6 +259,7 @@ function SortableCard({
         onDelete={hidden ? undefined : onDelete}
         onToggleUrgent={hidden ? undefined : onToggleUrgent}
         listName={listName}
+        stage={stage}
         handle={
           <button
             type="button"

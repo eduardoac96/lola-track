@@ -4,6 +4,7 @@ import { SwipeRow } from '../../ui/SwipeRow';
 import { usePhotoUrl } from '../../data/photos';
 import { Icon } from '../../ui/Icon';
 import { TYPES, isDone, itemMeta } from './select';
+import { stageLabel, type GiftStage } from './gifts';
 
 export function ItemThumb({ item, size = 52 }: { item: Item; size?: number }) {
   const t = TYPES[item.type];
@@ -30,8 +31,14 @@ export function ItemCard({
   onToggleUrgent,
   handle,
   listName,
+  stage,
+  onAdvanceStage,
 }: {
   item: Item;
+  /** Estado de regalo (solo en listas de regalos). */
+  stage?: GiftStage;
+  /** Toque en el chip de estado: Comprado → Envuelto → Entregado → Comprado. */
+  onAdvanceStage?: () => void;
   /** Nombre de la lista a mostrar en la línea de detalle (solo en la vista "Todas"). */
   listName?: string;
   onToggle: () => void;
@@ -58,6 +65,27 @@ export function ItemCard({
           <span className="truncate text-[12px] font-medium text-muted">{itemMeta(item, listName)}</span>
         </span>
       </button>
+      {stage && stage !== 'idea' && (
+        <button
+          type="button"
+          onClick={onAdvanceStage}
+          disabled={!onAdvanceStage}
+          aria-label={`${item.title}: ${stageLabel(stage)}. Tocar para avanzar`}
+          className={`flex h-11 shrink-0 items-center rounded-full px-1 ${onAdvanceStage ? '' : 'pointer-events-none'}`}
+        >
+          <span
+            className={`flex h-7 items-center rounded-full px-2.5 text-[12px] font-bold ${
+              stage === 'entregado'
+                ? 'bg-done text-white'
+                : stage === 'envuelto'
+                  ? 'bg-[var(--color-compra-tint)] text-[var(--color-compra-fg)]'
+                  : 'bg-track text-ink'
+            }`}
+          >
+            {stageLabel(stage)}
+          </span>
+        </button>
+      )}
       <button
         type="button"
         onClick={onToggle}

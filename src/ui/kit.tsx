@@ -235,3 +235,39 @@ export const haptic = () => {
     /* iOS lo ignora */
   }
 };
+
+/* ───────── Interruptor con título y descripción */
+export function SwitchRow({
+  on,
+  onChange,
+  title,
+  hint,
+}: {
+  on: boolean;
+  onChange: (v: boolean) => void;
+  title: string;
+  hint?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => onChange(!on)}
+      className="flex min-h-14 items-center gap-3 rounded-[14px] bg-bg px-3.5 py-2.5 text-left"
+    >
+      <span className="flex flex-1 flex-col">
+        <span className="text-[15px] font-bold">{title}</span>
+        {hint && <span className="text-[12px] font-medium text-muted">{hint}</span>}
+      </span>
+      <span
+        aria-hidden="true"
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? 'bg-done' : 'bg-check'}`}
+      >
+        <span
+          className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[22px]' : 'translate-x-0.5'}`}
+        />
+      </span>
+    </button>
+  );
+}
