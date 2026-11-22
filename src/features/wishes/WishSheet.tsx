@@ -90,7 +90,7 @@ function OwnWishForm({ wish, onClose, onDelete }: { wish: Wish; onClose: () => v
               aria-pressed={starred}
               onClick={() => setStarred(!starred)}
               className={`flex h-12 items-center justify-center gap-2 rounded-[14px] border text-[15px] font-bold ${
-                starred ? 'border-[#F5A524] bg-[#FFF4DE] text-[#8A5300]' : 'border-field-line bg-field text-muted'
+                starred ? 'border-[#D69A2D] bg-[#F8EBCF] text-[#85591A]' : 'border-field-line bg-field text-muted'
               }`}
             >
               <Icon name="star" size={20} filled={starred} />

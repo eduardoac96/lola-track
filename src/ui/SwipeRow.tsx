@@ -7,7 +7,7 @@ export interface SwipeRightAction {
   /** Texto corto que se ve al deslizar ("Urgente", "Quitar urgente"). */
   label: string;
   icon: IconName;
-  /** Clase de fondo (p. ej. bg-[#E5484D]). */
+  /** Clase de fondo (p. ej. bg-[#D2483A]). */
   bg: string;
   run: () => void;
   /** Tecla equivalente para teclado (p. ej. "u"). */

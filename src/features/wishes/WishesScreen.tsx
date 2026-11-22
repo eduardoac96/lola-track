@@ -95,7 +95,7 @@ export function WishesScreen() {
     <main className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10">
       <div className="contents md:sticky md:top-10 md:flex md:flex-col md:gap-4">
         <header className="flex flex-col gap-0.5">
-          <h1 className="m-0 text-[30px] font-extrabold tracking-tight">Deseos</h1>
+          <h1 className="m-0 text-[30px] font-bold tracking-tight">Deseos</h1>
           <span className="text-[13px] font-semibold text-muted">
             {mine ? 'Lo que te gustaría tener' : `Ideas para regalarle a ${owner?.display_name ?? 'tu pareja'}`}
           </span>

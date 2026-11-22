@@ -10,7 +10,7 @@ import { Icon } from '../../ui/Icon';
 import { Field, GhostButton, PrimaryButton, inputCls } from '../../ui/kit';
 import { listBudget, peopleSummary, personKey, type BarTone, type PersonRow } from './gifts';
 
-const TONE: Record<BarTone, string> = { ok: 'var(--color-done)', warn: '#F5A524', over: '#E5484D' };
+const TONE: Record<BarTone, string> = { ok: 'var(--color-done)', warn: '#D69A2D', over: '#D2483A' };
 
 /** Barra de la bolsa ligada a la lista: Gastado · Planeado · Libre. */
 export function ListBudgetBar({ list, items }: { list: List; items: readonly Item[] }) {
@@ -104,11 +104,11 @@ export function GiftPeople({ list, items }: { list: List; items: readonly Item[]
               onClick={() => setEditing(r)}
               aria-label={`${r.name}: ${fmtMXN(r.amount)}${r.cap != null ? ` de ${fmtMXN(r.cap)}` : ''}. Editar tope`}
               className={`flex min-h-14 shrink-0 flex-col justify-center rounded-[16px] border bg-card px-3.5 py-2 text-left ${
-                r.over ? 'border-[#E5484D]' : 'border-line'
+                r.over ? 'border-[#D2483A]' : 'border-line'
               }`}
             >
               <span className="max-w-[140px] truncate text-[14px] font-bold">{r.name}</span>
-              <span className={`text-[12px] font-semibold ${r.over ? 'text-[#E5484D]' : 'text-muted'}`}>
+              <span className={`text-[12px] font-semibold ${r.over ? 'text-[#D2483A]' : 'text-muted'}`}>
                 {fmtMXN(r.amount)}
                 {r.cap != null && ` / ${fmtMXN(r.cap)}`} · {r.count}
               </span>

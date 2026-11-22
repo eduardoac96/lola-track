@@ -3,7 +3,7 @@ import { Icon } from '../../ui/Icon';
 import { SwipeRow } from '../../ui/SwipeRow';
 import { CLAIM_LABEL, wishMeta } from './select';
 
-const STAR = '#F5A524';
+const STAR = '#D69A2D';
 
 export function WishTile({ wish, size = 52 }: { wish: Wish; size?: number }) {
   return (
@@ -12,8 +12,8 @@ export function WishTile({ wish, size = 52 }: { wish: Wish; size?: number }) {
       style={{
         width: size,
         height: size,
-        background: wish.starred ? '#FFF4DE' : 'var(--color-compra-tint)',
-        color: wish.starred ? '#8A5300' : 'var(--color-compra-fg)',
+        background: wish.starred ? '#F8EBCF' : 'var(--color-compra-tint)',
+        color: wish.starred ? '#85591A' : 'var(--color-compra-fg)',
       }}
     >
       <Icon name="gift" size={Math.round(size * 0.46)} />
@@ -98,7 +98,7 @@ export function WishCard({
           ? {
               label: got ? 'Aún no lo tengo' : 'Ya lo tengo',
               icon: 'check',
-              bg: got ? 'bg-[#6B6880]' : 'bg-done',
+              bg: got ? 'bg-[#776A60]' : 'bg-done',
               run: onToggleGot,
               key: 't',
             }
@@ -118,7 +118,7 @@ function ClaimPill({ claim, title, onTap }: { claim?: WishClaim | undefined; tit
     status === 'comprado'
       ? 'border-done bg-done text-white'
       : status === 'apartado'
-        ? 'border-[#F5A524] bg-[#FFF4DE] text-[#8A5300]'
+        ? 'border-[#D69A2D] bg-[#F8EBCF] text-[#85591A]'
         : 'border-line bg-card text-primary-hover';
   const label = status ? CLAIM_LABEL[status] : 'Apartar';
   const next = !status ? 'apartar' : status === 'apartado' ? 'marcar como comprado' : 'ver opciones de';

@@ -26,7 +26,7 @@ export function OnboardingScreen({ userId, email }: { userId: string; email: str
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 py-10">
       <header className="flex flex-col gap-1">
         <span className="text-[13px] font-semibold text-muted">{email}</span>
-        <h1 className="m-0 text-[28px] font-extrabold tracking-tight">Configura tu hogar</h1>
+        <h1 className="m-0 text-[28px] font-bold tracking-tight">Configura tu hogar</h1>
         <p className="m-0 text-[15px] font-medium text-muted">
           Uno crea el hogar y le comparte un código al otro. Es una sola vez.
         </p>

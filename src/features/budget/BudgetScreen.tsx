@@ -45,7 +45,7 @@ export function BudgetScreen() {
   };
   return (
     <main className="flex flex-col gap-4">
-      <h1 className="m-0 text-[30px] font-extrabold tracking-tight">Presupuesto</h1>
+      <h1 className="m-0 text-[30px] font-bold tracking-tight">Presupuesto</h1>
       <Segmented
         label="Presupuesto"
         value={view}
@@ -158,7 +158,7 @@ function HouseholdBudget() {
                 </button>
               </span>
               <span
-                className={`text-[44px] leading-none font-extrabold tracking-tight ${negative ? 'text-[#FF8A8F]' : ''}`}
+                className={`text-[44px] leading-none font-extrabold tracking-tight ${negative ? 'text-[#FF9A87]' : ''}`}
               >
                 {fmtMXN(current.available_cents)}
               </span>

@@ -3,10 +3,23 @@ import type { Member } from '../data/household';
 import { Icon } from './Icon';
 
 /* ───────── Avatar */
+/** Colores guardados con la paleta anterior (morado) → su equivalente en la paleta terracota/salvia. */
+const LEGACY_COLORS: Record<string, string> = {
+  '#5B47E0': '#B5532F',
+  '#F5A524': '#D69A2D',
+  '#1E6B4A': '#5F7F64',
+  '#D9472B': '#3F6E8C',
+};
+export function memberColor(color: string | null | undefined): string {
+  if (!color) return '#A89D93';
+  const c = color.toUpperCase();
+  return LEGACY_COLORS[c] ?? c;
+}
+
 export function Avatar({ member, size = 36, ring }: { member?: Member | undefined; size?: number; ring?: boolean }) {
   const name = member?.display_name ?? '?';
-  const color = member?.color ?? '#9C99B0';
-  const dark = color.toUpperCase() === '#F5A524';
+  const color = memberColor(member?.color);
+  const dark = color === '#D69A2D';
   return (
     <span
       title={name}
@@ -15,7 +28,7 @@ export function Avatar({ member, size = 36, ring }: { member?: Member | undefine
         width: size,
         height: size,
         background: color,
-        color: dark ? '#1C1A2B' : '#FFFFFF',
+        color: dark ? '#2B221D' : '#FFFFFF',
         fontSize: Math.round(size * 0.4),
         boxShadow: ring ? '0 0 0 3px var(--color-bg)' : undefined,
       }}
@@ -40,12 +53,7 @@ export function Segmented<T extends string>({
   size?: 'md' | 'sm';
 }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className="grid gap-1 rounded-[14px] bg-track p-1"
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
-    >
+    <div role="radiogroup" aria-label={label} className="flex gap-1 rounded-[14px] bg-track p-1">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -55,8 +63,10 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={on}
             onClick={() => onChange(o.value)}
-            className={`rounded-[11px] font-bold transition-colors ${size === 'sm' ? 'h-10 text-[13px]' : 'h-11 text-[14px]'} ${
-              on ? 'bg-card text-ink shadow-[0_2px_6px_rgba(28,26,43,0.10)]' : 'text-muted'
+            className={`flex-auto rounded-[11px] font-bold whitespace-nowrap transition-colors ${
+              options.length > 4 ? 'px-1 text-[12px]' : 'px-2'
+            } ${size === 'sm' ? 'h-10' : 'h-11'} ${options.length > 4 ? '' : size === 'sm' ? 'text-[13px]' : 'text-[14px]'} ${
+              on ? 'bg-card text-ink shadow-[0_2px_6px_rgba(43,34,29,0.10)]' : 'text-muted'
             }`}
           >
             {o.label}
@@ -144,7 +154,7 @@ export function EmptyCard({ children }: { children: ReactNode }) {
 export function Spinner({ label = 'Cargando' }: { label?: string }) {
   return (
     <div role="status" className="flex flex-1 items-center justify-center p-10">
-      <span className="size-8 animate-spin rounded-full border-4 border-[#E4E0FF] border-t-primary" />
+      <span className="size-8 animate-spin rounded-full border-4 border-[#F0DDD3] border-t-primary" />
       <span className="sr-only">{label}</span>
     </div>
   );
@@ -185,7 +195,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             {msg.action && (
               <button
                 type="button"
-                className="h-10 rounded-xl px-3 font-extrabold text-[#C9C2FF]"
+                className="h-10 rounded-xl px-3 font-extrabold text-[#F3B394]"
                 onClick={() => {
                   msg.action?.run();
                   setMsg(null);
@@ -208,7 +218,7 @@ export function Fab({ onClick, label }: { onClick: () => void; label: string }) 
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="fixed right-5 bottom-[calc(96px+env(safe-area-inset-bottom))] md:right-8 md:bottom-8 z-30 flex size-15 items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(91,71,224,0.35)] active:scale-95"
+      className="fixed right-5 bottom-[calc(96px+env(safe-area-inset-bottom))] md:right-8 md:bottom-8 z-30 flex size-15 items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(181,83,47,0.35)] active:scale-95"
     >
       <Icon name="plus" size={26} stroke={2.6} />
     </button>

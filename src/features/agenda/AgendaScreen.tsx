@@ -54,7 +54,7 @@ export function AgendaScreen() {
             <span className="text-[13px] font-semibold text-muted">
               {MONTHS[selected.getMonth()]} {selected.getFullYear()}
             </span>
-            <h1 className="m-0 text-[30px] font-extrabold tracking-tight">Agenda</h1>
+            <h1 className="m-0 text-[30px] font-bold tracking-tight">Agenda</h1>
           </div>
           <div className="flex gap-1">
             <button

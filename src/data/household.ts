@@ -10,7 +10,7 @@ export interface HouseholdData {
   members: Member[];
 }
 
-export const MEMBER_COLORS = ['#5B47E0', '#F5A524', '#1E6B4A', '#D9472B'] as const;
+export const MEMBER_COLORS = ['#B5532F', '#D69A2D', '#5F7F64', '#3F6E8C'] as const;
 
 export function useHousehold(userId: string | undefined) {
   return useQuery({

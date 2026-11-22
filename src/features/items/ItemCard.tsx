@@ -52,16 +52,18 @@ export function ItemCard({
 }) {
   const done = isDone(item);
   const card = (
-    <div className="flex items-center gap-2 rounded-[var(--radius-card)] border border-line bg-card py-2.5 pr-2.5 pl-3">
+    <div className="flex min-h-[64px] items-center gap-2 rounded-[var(--radius-card)] border border-line bg-card py-2.5 pr-2.5 pl-4">
       {handle}
       <button
         type="button"
         onClick={onOpen}
         className={`flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity ${done ? 'opacity-55' : ''}`}
       >
-        <ItemThumb item={item} />
+        {item.photo_path && <ItemThumb item={item} size={44} />}
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className={`truncate text-[15px] font-bold ${done ? 'line-through' : ''}`}>{item.title}</span>
+          <span className={`line-clamp-2 text-[15px] leading-snug font-bold ${done ? 'line-through' : ''}`}>
+            {item.title}
+          </span>
           <span className="truncate text-[12px] font-medium text-muted">{itemMeta(item, listName)}</span>
         </span>
       </button>
@@ -112,7 +114,7 @@ export function ItemCard({
           ? {
               label: item.priority === 'urgente' ? 'Quitar urgente' : 'Urgente',
               icon: 'flag',
-              bg: item.priority === 'urgente' ? 'bg-[#6B6880]' : 'bg-[#E5484D]',
+              bg: item.priority === 'urgente' ? 'bg-[#776A60]' : 'bg-[#D2483A]',
               run: onToggleUrgent,
               key: 'u',
             }

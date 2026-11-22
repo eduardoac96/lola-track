@@ -39,6 +39,8 @@ interface Props {
   /** Estado de regalo si el pendiente es de una lista de regalos. */
   stageOf?: (i: Item) => GiftStage | undefined;
   onAdvanceStage?: (i: Item) => void;
+  /** Hechos más antiguos que no vienen en `groups` (se ofrecen dentro de "Hechos"). */
+  olderDone?: { count: number; onShow: () => void };
 }
 
 /**
@@ -56,6 +58,7 @@ export function PriorityBoard({
   listNameOf,
   stageOf,
   onAdvanceStage,
+  olderDone,
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overGroup, setOverGroup] = useState<ItemPriority | null>(null);
@@ -79,6 +82,8 @@ export function PriorityBoard({
     Item[]
   >;
   const all = full.flatMap((g) => g.items);
+  const doneAll = all.filter(isDone).sort((a, b) => (b.done_at ?? '').localeCompare(a.done_at ?? ''));
+  const [showDone, setShowDone] = useState(false);
   const active = activeId ? all.find((i) => i.id === activeId) : undefined;
 
   const groupOf = (id: string): ItemPriority | null => {
@@ -110,7 +115,7 @@ export function PriorityBoard({
       }}
     >
       {full
-        .filter((g) => g.items.length > 0 || activeId)
+        .filter((g) => pendingBy[g.priority].length > 0 || activeId)
         .map((g) => (
           <Section
             key={g.priority}
@@ -124,9 +129,41 @@ export function PriorityBoard({
             onToggleUrgent={onToggleUrgent}
             listNameOf={listNameOf}
             stageOf={stageOf}
-            onAdvanceStage={onAdvanceStage}
           />
         ))}
+      {(doneAll.length > 0 || (olderDone?.count ?? 0) > 0) && !activeId && (
+        <section className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setShowDone((v) => !v)}
+            aria-expanded={showDone}
+            className="flex h-11 items-center gap-2 self-start rounded-full px-1 text-[14px] font-bold text-muted"
+          >
+            <span className={`transition-transform ${showDone ? 'rotate-90' : ''}`}>
+              <Icon name="chevronRight" size={16} stroke={2.5} />
+            </span>
+            Hechos ({doneAll.length + (olderDone?.count ?? 0)})
+          </button>
+          {showDone &&
+            doneAll.map((it) => (
+              <ItemCard
+                key={it.id}
+                item={it}
+                onToggle={() => onToggle(it)}
+                onOpen={() => onOpen(it)}
+                onDelete={() => onDelete(it)}
+                listName={listNameOf?.(it)}
+                stage={stageOf?.(it)}
+                onAdvanceStage={onAdvanceStage ? () => onAdvanceStage(it) : undefined}
+              />
+            ))}
+          {showDone && olderDone && olderDone.count > 0 && (
+            <button type="button" onClick={olderDone.onShow} className="h-11 text-[14px] font-bold text-primary-hover">
+              Ver hechos antiguos ({olderDone.count})
+            </button>
+          )}
+        </section>
+      )}
       <DragOverlay dropAnimation={null}>
         {active ? (
           <div className="scale-[1.03] rounded-[var(--radius-card)] shadow-2xl">
@@ -155,7 +192,6 @@ function Section({
   onToggleUrgent,
   listNameOf,
   stageOf,
-  onAdvanceStage,
 }: {
   group: ItemGroup;
   highlight: boolean;
@@ -167,10 +203,8 @@ function Section({
   onToggleUrgent: (i: Item) => void;
   listNameOf?: (i: Item) => string | undefined;
   stageOf?: (i: Item) => GiftStage | undefined;
-  onAdvanceStage?: (i: Item) => void;
 }) {
   const { setNodeRef } = useDroppable({ id: groupDropId(group.priority) });
-  const done = group.items.filter(isDone);
   return (
     <section
       ref={setNodeRef}
@@ -201,26 +235,14 @@ function Section({
           Suelta aquí para {group.label.toLowerCase()}
         </div>
       )}
-      {done.map((it) => (
-        <ItemCard
-          key={it.id}
-          item={it}
-          onToggle={() => onToggle(it)}
-          onOpen={() => onOpen(it)}
-          onDelete={() => onDelete(it)}
-          listName={listNameOf?.(it)}
-          stage={stageOf?.(it)}
-          onAdvanceStage={onAdvanceStage ? () => onAdvanceStage(it) : undefined}
-        />
-      ))}
     </section>
   );
 }
 
 function GripIcon() {
   return (
-    <span className="-ml-1 flex h-11 w-7 shrink-0 items-center justify-center text-muted">
-      <Icon name="grip" size={20} stroke={3} />
+    <span className="-ml-2 flex h-11 w-6 shrink-0 items-center justify-center text-check">
+      <Icon name="grip" size={18} stroke={3} />
     </span>
   );
 }
@@ -268,9 +290,9 @@ function SortableCard({
             {...listeners}
             aria-label={`Mover "${item.title}" (reordenar o cambiar de prioridad)`}
             aria-roledescription="asa para mover"
-            className="-ml-1 flex h-11 w-7 shrink-0 cursor-grab touch-none items-center justify-center text-muted active:cursor-grabbing"
+            className="-ml-2 flex h-11 w-6 shrink-0 cursor-grab touch-none items-center justify-center text-check active:cursor-grabbing"
           >
-            <Icon name="grip" size={20} stroke={3} />
+            <Icon name="grip" size={18} stroke={3} />
           </button>
         }
       />

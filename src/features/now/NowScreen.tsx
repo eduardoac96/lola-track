@@ -74,7 +74,7 @@ export function NowScreen() {
           <MiniRing pct={prog.pct} />
           <div className="flex min-w-0 flex-col">
             <span className="text-[13px] font-semibold text-muted">{fmtLongDate(new Date())}</span>
-            <h1 className="m-0 text-[26px] leading-tight font-extrabold tracking-tight">Nuestra casa</h1>
+            <h1 className="m-0 text-[26px] leading-tight font-bold tracking-tight">Nuestra casa</h1>
             <span className="text-[13px] font-semibold text-muted">
               {prog.total ? `${prog.done} de ${prog.total} hechos` : 'Sin pendientes todavía'}
             </span>
@@ -96,7 +96,10 @@ export function NowScreen() {
             className="flex min-h-11 items-center"
           >
             {members.map((m, i) => (
-              <span key={m.user_id} style={{ marginLeft: i ? -12 : 0 }}>
+              <span
+                key={m.user_id}
+                style={{ marginLeft: i ? -8 : 0, zIndex: members.length - i, position: 'relative' }}
+              >
                 <Avatar member={m} size={36} ring />
               </span>
             ))}

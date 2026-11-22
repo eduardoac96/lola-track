@@ -18,6 +18,8 @@ import { useItemToggle } from './useItemToggle';
 import { GiftPeople, ListBudgetBar } from './ListExtras';
 import { nextStage, stageOf } from './gifts';
 
+const TYPE_LABEL: Record<TypeFilter, string> = { todo: 'Todo', compra: 'Compras', tarea: 'Tareas' };
+
 export function ItemsScreen() {
   const { hid } = useApp();
   const items = useItems(hid);
@@ -31,6 +33,7 @@ export function ItemsScreen() {
   const [type, setType] = useState<TypeFilter>('todo');
   const [area, setArea] = useState<string | null>(null);
   const [showAllDone, setShowAllDone] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const all = useMemo(() => items.data ?? [], [items.data]);
@@ -64,6 +67,7 @@ export function ItemsScreen() {
     // Entregado → vuelve a Comprado (por si fue un toque de más)
     updateItem.mutate({ id: i.id, patch: { gift_stage: next ?? null } });
   };
+  const activeFilters = [type !== 'todo' ? TYPE_LABEL[type] : null, area].filter(Boolean) as string[];
   const open: Item | null = all.find((i) => i.id === openId) ?? null;
 
   return (
@@ -136,38 +140,73 @@ export function ItemsScreen() {
 
         {current?.is_gift && <GiftPeople list={current} items={inSel} />}
 
-        <Segmented
-          label="Filtrar por tipo"
-          size="sm"
-          value={type}
-          onChange={setType}
-          options={[
-            { value: 'todo', label: 'Todo' },
-            { value: 'compra', label: 'Compras' },
-            { value: 'tarea', label: 'Tareas' },
-          ]}
-        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowFilters((v) => !v)}
+            aria-expanded={showFilters || activeFilters.length > 0}
+            className={`flex h-11 items-center gap-1.5 rounded-full border px-4 text-[13px] font-bold ${
+              activeFilters.length > 0 ? 'border-primary bg-primary text-white' : 'border-line bg-card text-muted'
+            }`}
+          >
+            {activeFilters.length > 0 ? activeFilters.join(' · ') : 'Filtrar'}
+          </button>
+          {activeFilters.length > 0 && (
+            <button
+              type="button"
+              aria-label="Quitar filtros"
+              onClick={() => {
+                setType('todo');
+                setArea(null);
+                setShowFilters(false);
+              }}
+              className="flex size-11 items-center justify-center rounded-full border border-line bg-card text-muted"
+            >
+              <Icon name="close" size={16} stroke={2.6} />
+            </button>
+          )}
+        </div>
 
-        {areas.length > 0 && (
-          <div role="radiogroup" aria-label="Filtrar por área" className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
-            {[null, ...areas].map((a) => {
-              const on = a === area;
-              return (
-                <button
-                  key={a ?? '__all'}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => setArea(a)}
-                  className={`h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-bold ${
-                    on ? 'border-primary bg-primary text-white' : 'border-line bg-card text-ink'
-                  }`}
-                >
-                  {a ?? 'Todas las áreas'}
-                </button>
-              );
-            })}
-          </div>
+        {(showFilters || activeFilters.length > 0) && (
+          <>
+            <Segmented
+              label="Filtrar por tipo"
+              size="sm"
+              value={type}
+              onChange={setType}
+              options={[
+                { value: 'todo', label: 'Todo' },
+                { value: 'compra', label: 'Compras' },
+                { value: 'tarea', label: 'Tareas' },
+              ]}
+            />
+
+            {areas.length > 0 && (
+              <div
+                role="radiogroup"
+                aria-label="Filtrar por área"
+                className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1"
+              >
+                {[null, ...areas].map((a) => {
+                  const on = a === area;
+                  return (
+                    <button
+                      key={a ?? '__all'}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => setArea(a)}
+                      className={`h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-bold ${
+                        on ? 'border-primary bg-primary text-white' : 'border-line bg-card text-ink'
+                      }`}
+                    >
+                      {a ?? 'Todas las áreas'}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
         {current?.budget_id ? (
@@ -210,17 +249,8 @@ export function ItemsScreen() {
             listNameOf={listNameOf}
             stageOf={(i) => (isGiftItem(i) ? stageOf(i) : undefined)}
             onAdvanceStage={advanceStage}
+            olderDone={!showAllDone ? { count: hiddenDone, onShow: () => setShowAllDone(true) } : undefined}
           />
-        )}
-
-        {hiddenDone > 0 && !showAllDone && (
-          <button
-            type="button"
-            onClick={() => setShowAllDone(true)}
-            className="h-11 text-[14px] font-bold text-primary-hover"
-          >
-            Ver hechos antiguos ({hiddenDone})
-          </button>
         )}
       </div>
 

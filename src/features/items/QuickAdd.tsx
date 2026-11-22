@@ -25,6 +25,7 @@ export function QuickAdd({
   const { hid, userId } = useApp();
   const create = useCreateItem(hid, userId);
   const [text, setText] = useState('');
+  const [focused, setFocused] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const parsed = useMemo(() => parseQuickAdd(text), [text]);
 
@@ -65,6 +66,8 @@ export function QuickAdd({
           ref={input}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder={placeholder}
           autoComplete="off"
           enterKeyHint="done"
@@ -103,7 +106,7 @@ export function QuickAdd({
             </Chip>
           )}
         </div>
-      ) : (
+      ) : focused ? (
         <p className="m-0 px-1 text-[12px] font-medium text-muted">
           {gift ? (
             <>
@@ -115,7 +118,7 @@ export function QuickAdd({
             </>
           )}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

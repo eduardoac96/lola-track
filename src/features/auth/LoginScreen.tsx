@@ -43,7 +43,7 @@ export function LoginScreen() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-7 px-6 py-10">
       <header className="flex flex-col gap-3">
         <img src="/icon-192.png" alt="" width={64} height={64} className="size-16 rounded-[20px]" />
-        <h1 className="m-0 text-[32px] leading-tight font-extrabold tracking-tight">Lola Track</h1>
+        <h1 className="m-0 text-[32px] leading-tight font-bold tracking-tight">Lola Track</h1>
         <p className="m-0 text-[15px] font-medium text-muted">
           Pendientes, agenda y presupuesto de la casa, en un solo lugar.
         </p>

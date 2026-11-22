@@ -10,9 +10,9 @@ export const matchesType = (t: ItemType, f: TypeFilter): boolean =>
   f === 'todo' || (f === 'compra' ? t === 'compra' : t !== 'compra');
 
 export const PRIORITIES: ReadonlyArray<{ value: ItemPriority; label: string; dot: string }> = [
-  { value: 'urgente', label: 'Urgente', dot: '#E5484D' },
-  { value: 'pronto', label: 'Pronto', dot: '#F5A524' },
-  { value: 'algun_dia', label: 'Algún día', dot: '#9C99B0' },
+  { value: 'urgente', label: 'Urgente', dot: '#D2483A' },
+  { value: 'pronto', label: 'Pronto', dot: '#D69A2D' },
+  { value: 'algun_dia', label: 'Algún día', dot: '#A89D93' },
 ];
 
 export const TYPES: Record<ItemType, { label: string; tint: string; fg: string; icon: IconName }> = {

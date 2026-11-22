@@ -2,7 +2,7 @@
 export type ThemePref = 'auto' | 'light' | 'dark';
 
 const KEY = 'lola:theme';
-const META_COLORS = { light: '#F5F4FA', dark: '#121019' } as const;
+const META_COLORS = { light: '#F6F2EC', dark: '#15110E' } as const;
 
 export function getThemePref(): ThemePref {
   try {

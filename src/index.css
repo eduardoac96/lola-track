@@ -3,45 +3,47 @@
 /* Tokens — spec §5 */
 @theme {
   --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
 
-  --color-bg: #f5f4fa;
+  /* Paleta Lola: terracota (acción) · salvia (hecho) · mostaza (pronto) sobre crema cálida */
+  --color-bg: #f6f2ec;
   --color-card: #ffffff;
-  --color-line: #eceaf3;
-  --color-ink: #1c1a2b;
-  --color-muted: #6b6880;
+  --color-line: #ece5dc;
+  --color-ink: #2b221d;
+  --color-muted: #776a60;
 
-  --color-primary: #5b47e0;
-  --color-primary-hover: #4535b8;
+  --color-primary: #b5532f;
+  --color-primary-hover: #96421f;
 
-  --color-prio-urgente: #e5484d;
-  --color-prio-pronto: #f5a524;
-  --color-prio-algun: #9c99b0;
+  --color-prio-urgente: #d2483a;
+  --color-prio-pronto: #d69a2d;
+  --color-prio-algun: #a89d93;
 
-  --color-compra-tint: #e9e6fd;
-  --color-compra-fg: #4535b8;
-  --color-arreglo-tint: #fff4de;
-  --color-arreglo-fg: #8a5300;
-  --color-tarea-tint: #e3f4ec;
-  --color-tarea-fg: #1e6b4a;
+  --color-compra-tint: #f6e3da;
+  --color-compra-fg: #96421f;
+  --color-arreglo-tint: #f8ebcf;
+  --color-arreglo-fg: #85591a;
+  --color-tarea-tint: #e4ece2;
+  --color-tarea-fg: #4e6e53;
 
-  --color-gasto: #a61e25;
-  --color-gasto-tint: #fde8e8;
-  --color-abono: #1e6b4a;
-  --color-abono-tint: #e3f4ec;
+  --color-gasto: #a3352a;
+  --color-gasto-tint: #f9e3de;
+  --color-abono: #4e6e53;
+  --color-abono-tint: #e4ece2;
 
-  --color-soft: #f1eff7;
-  --color-track: #e9e7f2;
-  --color-field: #f8f7fc;
-  --color-field-line: #e2dfec;
-  --color-line-soft: #f0eef6;
-  --color-dashed: #c9c4e8;
-  --color-check: #d6d3e3;
-  --color-disabled: #b3b0c4;
-  --color-hero: #1c1a2b;
-  --color-on-hero: #d9d6ea;
-  --color-placeholder: #8a879c;
-  --color-done: #1e6b4a;
-  --color-danger: #b4232a;
+  --color-soft: #f0eae2;
+  --color-track: #eae2d8;
+  --color-field: #faf7f3;
+  --color-field-line: #e4dbd0;
+  --color-line-soft: #f1ebe3;
+  --color-dashed: #dcc4b6;
+  --color-check: #ddd3c8;
+  --color-disabled: #bbafa4;
+  --color-hero: #2b221d;
+  --color-on-hero: #e9ddd3;
+  --color-placeholder: #8e8177;
+  --color-done: #5f7f64;
+  --color-danger: #b23a2c;
 
   --radius-card: 18px;
   --radius-hero: 26px;
@@ -55,32 +57,34 @@
 /* Modo oscuro: mismos tokens, otros valores (Tailwind v4 lee las variables en runtime).
    data-theme="dark" lo fuerza; sin data-theme sigue al sistema; data-theme="light" lo fuerza claro. */
 :root[data-theme='dark'] {
-  --color-bg: #121019;
-  --color-card: #1c1a28;
-  --color-line: #2c2939;
-  --color-ink: #f2f0fa;
-  --color-muted: #a9a6bd;
-  --color-primary-hover: #a99cff;
-  --color-soft: #262335;
-  --color-track: #262335;
-  --color-field: #1f1c2c;
-  --color-field-line: #343046;
-  --color-line-soft: #262335;
-  --color-dashed: #4a4566;
-  --color-check: #4a4566;
-  --color-disabled: #4a4760;
-  --color-hero: #2a2640;
-  --color-placeholder: #7d7a92;
-  --color-compra-tint: #2c2752;
-  --color-compra-fg: #c3baff;
+  --color-bg: #15110e;
+  --color-card: #201a16;
+  --color-line: #322a24;
+  --color-ink: #f4ede6;
+  --color-muted: #b3a69b;
+  --color-primary: #c9643f;
+  --color-primary-hover: #f0a07f;
+  --color-soft: #2a221d;
+  --color-track: #2a221d;
+  --color-field: #1e1814;
+  --color-field-line: #3a3029;
+  --color-line-soft: #2a221d;
+  --color-dashed: #5a473c;
+  --color-check: #5a473c;
+  --color-disabled: #4e433b;
+  --color-hero: #2c2420;
+  --color-placeholder: #8a7d73;
+  --color-compra-tint: #3a2318;
+  --color-compra-fg: #f3b394;
   --color-arreglo-tint: #3a2c12;
-  --color-arreglo-fg: #f2c46b;
-  --color-tarea-tint: #15342a;
-  --color-tarea-fg: #7dd3a8;
-  --color-gasto: #ff8a8f;
-  --color-gasto-tint: #3c1b20;
-  --color-abono: #7dd3a8;
-  --color-abono-tint: #15342a;
+  --color-arreglo-fg: #e8c27a;
+  --color-tarea-tint: #1f2b21;
+  --color-tarea-fg: #a9c8a9;
+  --color-gasto: #ff9a87;
+  --color-gasto-tint: #3c1e18;
+  --color-abono: #a9c8a9;
+  --color-abono-tint: #1f2b21;
+  --color-done: #6f9474;
   color-scheme: dark;
 }
 :root[data-theme='light'] {
@@ -88,37 +92,43 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --color-bg: #121019;
-    --color-card: #1c1a28;
-    --color-line: #2c2939;
-    --color-ink: #f2f0fa;
-    --color-muted: #a9a6bd;
-    --color-primary-hover: #a99cff;
-    --color-soft: #262335;
-    --color-track: #262335;
-    --color-field: #1f1c2c;
-    --color-field-line: #343046;
-    --color-line-soft: #262335;
-    --color-dashed: #4a4566;
-    --color-check: #4a4566;
-    --color-disabled: #4a4760;
-    --color-hero: #2a2640;
-    --color-placeholder: #7d7a92;
-    --color-compra-tint: #2c2752;
-    --color-compra-fg: #c3baff;
+    --color-bg: #15110e;
+    --color-card: #201a16;
+    --color-line: #322a24;
+    --color-ink: #f4ede6;
+    --color-muted: #b3a69b;
+    --color-primary: #c9643f;
+    --color-primary-hover: #f0a07f;
+    --color-soft: #2a221d;
+    --color-track: #2a221d;
+    --color-field: #1e1814;
+    --color-field-line: #3a3029;
+    --color-line-soft: #2a221d;
+    --color-dashed: #5a473c;
+    --color-check: #5a473c;
+    --color-disabled: #4e433b;
+    --color-hero: #2c2420;
+    --color-placeholder: #8a7d73;
+    --color-compra-tint: #3a2318;
+    --color-compra-fg: #f3b394;
     --color-arreglo-tint: #3a2c12;
-    --color-arreglo-fg: #f2c46b;
-    --color-tarea-tint: #15342a;
-    --color-tarea-fg: #7dd3a8;
-    --color-gasto: #ff8a8f;
-    --color-gasto-tint: #3c1b20;
-    --color-abono: #7dd3a8;
-    --color-abono-tint: #15342a;
+    --color-arreglo-fg: #e8c27a;
+    --color-tarea-tint: #1f2b21;
+    --color-tarea-fg: #a9c8a9;
+    --color-gasto: #ff9a87;
+    --color-gasto-tint: #3c1e18;
+    --color-abono: #a9c8a9;
+    --color-abono-tint: #1f2b21;
+    --color-done: #6f9474;
   }
 }
 
 /* En @layer base para que las utilidades (p. ej. text-muted de la tab bar) puedan ganarle. */
 @layer base {
+  h1 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+  }
   a {
     color: var(--color-primary-hover);
   }

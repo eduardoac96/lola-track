@@ -70,7 +70,7 @@ export function Celebrations({ hid }: { hid: string }) {
         role="status"
         aria-live="polite"
         onClick={() => setMoment(null)}
-        className="pointer-events-auto flex max-w-[320px] flex-col items-center gap-2 rounded-[28px] bg-primary px-7 py-6 text-center text-white shadow-[0_20px_60px_rgba(28,26,43,0.35)]"
+        className="pointer-events-auto flex max-w-[320px] flex-col items-center gap-2 rounded-[28px] bg-primary px-7 py-6 text-center text-white shadow-[0_20px_60px_rgba(43,34,29,0.35)]"
         style={{ animation: 'pop .45s ease-out' }}
       >
         <span className="flex size-14 items-center justify-center rounded-full bg-white/20">
