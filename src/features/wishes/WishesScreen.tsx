@@ -19,6 +19,7 @@ import { WishCard } from './WishCard';
 import { WishSheet } from './WishSheet';
 import { claimOf, openTotalCents, parseWishInput, wishesOf } from './select';
 
+/** Deseos por persona. Vive dentro de Regalos (sin título propio). */
 export function WishesScreen() {
   const { hid, userId, members } = useApp();
   const wishes = useWishes(hid);
@@ -92,10 +93,9 @@ export function WishesScreen() {
   const reserved = mine ? 0 : open.filter((w) => claimOf(claimList, w.id)).length;
 
   return (
-    <main className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10">
+    <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10">
       <div className="contents md:sticky md:top-10 md:flex md:flex-col md:gap-4">
         <header className="flex flex-col gap-0.5">
-          <h1 className="m-0 text-[30px] font-bold tracking-tight">Deseos</h1>
           <span className="text-[13px] font-semibold text-muted">
             {mine ? 'Lo que te gustaría tener' : `Ideas para regalarle a ${owner?.display_name ?? 'tu pareja'}`}
           </span>
@@ -175,7 +175,7 @@ export function WishesScreen() {
         onClose={() => setOpenId(null)}
         onDelete={remove}
       />
-    </main>
+    </div>
   );
 }
 

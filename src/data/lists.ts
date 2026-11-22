@@ -26,7 +26,7 @@ export function useCreateList(hid: string, userId: string) {
   const qc = useQueryClient();
   const key = keys.lists(hid);
   return useMutation({
-    mutationFn: async (input: { id: string; name: string }) => {
+    mutationFn: async (input: { id: string; name: string; is_gift?: boolean }) => {
       const { data, error } = await supabase()
         .from('lists')
         .insert({ ...input, household_id: hid })
@@ -46,7 +46,7 @@ export function useCreateList(hid: string, userId: string) {
           household_id: hid,
           archived_at: null,
           budget_id: null,
-          is_gift: false,
+          is_gift: input.is_gift ?? false,
           event_date: null,
           event_reminded_at: null,
           created_by: userId,

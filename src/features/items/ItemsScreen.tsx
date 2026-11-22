@@ -4,7 +4,7 @@ import { useItems, useUpdateItem, type Item } from '../../data/items';
 import { useLists, type List } from '../../data/lists';
 import { Icon } from '../../ui/Icon';
 import { fmtMXN } from '../../lib/money';
-import { EmptyCard, Segmented, Spinner } from '../../ui/kit';
+import { EmptyCard, PrimaryButton, Segmented, Spinner } from '../../ui/kit';
 import { PriorityBoard } from './PriorityBoard';
 import { useSetPriority } from './usePriority';
 import { useDeleteWithUndo } from './useDeleteWithUndo';
@@ -13,19 +13,24 @@ import { QuickAdd } from './QuickAdd';
 import { ChecklistButton } from './ChecklistButton';
 import { areasOf, groupItems, inList, isDone, pendingPurchasesCents, type ListFilter, type TypeFilter } from './select';
 import { ListSheet } from './ListSheet';
-import { captureListId, resolveListFilter, useSelectedList } from './selectedList';
+import { captureListId, resolveListFilter, useSelectedList, type ListScope } from './selectedList';
 import { useItemToggle } from './useItemToggle';
 import { GiftPeople, ListBudgetBar } from './ListExtras';
 import { nextStage, stageOf } from './gifts';
 
 const TYPE_LABEL: Record<TypeFilter, string> = { todo: 'Todo', compra: 'Compras', tarea: 'Tareas' };
 
-export function ItemsScreen() {
+/**
+ * Pendientes (scope 'list') o las listas de regalo dentro de Regalos (scope 'gift').
+ * Cada espacio ve solo sus listas y recuerda su lista abierta.
+ */
+export function ItemsScreen({ scope = 'list' }: { scope?: ListScope }) {
+  const gifts = scope === 'gift';
   const { hid } = useApp();
   const items = useItems(hid);
   const updateItem = useUpdateItem(hid);
   const lists = useLists(hid);
-  const [rawList, setList] = useSelectedList(hid);
+  const [rawList, setList] = useSelectedList(hid, scope);
   const [listSheet, setListSheet] = useState<'new' | List | null>(null);
   const { toggle, sheet } = useItemToggle();
   const priority = useSetPriority();
@@ -36,9 +41,17 @@ export function ItemsScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const all = useMemo(() => items.data ?? [], [items.data]);
-  const active = useMemo(() => (lists.data ?? []).filter((l) => !l.archived_at), [lists.data]);
-  const list = resolveListFilter(rawList, lists.data);
+  const everything = useMemo(() => items.data ?? [], [items.data]);
+  const live = useMemo(() => (lists.data ?? []).filter((l) => !l.archived_at), [lists.data]);
+  const giftLists = useMemo(() => new Set(live.filter((l) => l.is_gift).map((l) => l.id)), [live]);
+  const isGiftItem = (i: Item) => i.list_id != null && giftLists.has(i.list_id);
+  const active = useMemo(() => live.filter((l) => l.is_gift === gifts), [live, gifts]);
+  // Lo de las listas de regalo vive en Regalos; Pendientes ve todo lo demás.
+  const all = useMemo(
+    () => everything.filter((i) => (i.list_id != null && giftLists.has(i.list_id)) === gifts),
+    [everything, giftLists, gifts],
+  );
+  const list = resolveListFilter(rawList, lists.data, scope);
   const current = active.find((l) => l.id === list);
   const inSel = useMemo(() => all.filter((i) => inList(i, list)), [all, list]);
   const areas = useMemo(() => areasOf(inSel), [inSel]);
@@ -59,8 +72,6 @@ export function ItemsScreen() {
     setList(f);
     setArea(null);
   };
-  const giftLists = useMemo(() => new Set(active.filter((l) => l.is_gift).map((l) => l.id)), [active]);
-  const isGiftItem = (i: Item) => i.list_id != null && giftLists.has(i.list_id);
   const advanceStage = (i: Item) => {
     const s = stageOf(i);
     const next = nextStage(s);
@@ -68,35 +79,57 @@ export function ItemsScreen() {
     updateItem.mutate({ id: i.id, patch: { gift_stage: next ?? null } });
   };
   const activeFilters = [type !== 'todo' ? TYPE_LABEL[type] : null, area].filter(Boolean) as string[];
-  const open: Item | null = all.find((i) => i.id === openId) ?? null;
+  const open: Item | null = everything.find((i) => i.id === openId) ?? null;
 
+  if (gifts && lists.isSuccess && active.length === 0) {
+    return (
+      <div className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-card p-5">
+        <p className="m-0 text-[15px] font-bold">Arma una lista para Navidad, un cumpleaños o la posada.</p>
+        <p className="m-0 text-[13px] font-medium text-muted">
+          Para quién es cada regalo, topes por persona y Comprado → Envuelto → Entregado.
+        </p>
+        <PrimaryButton onClick={() => setListSheet('new')}>Nueva lista de regalos</PrimaryButton>
+        <ListSheet target={listSheet} gift onClose={() => setListSheet(null)} />
+      </div>
+    );
+  }
+
+  const Root = gifts ? 'div' : 'main';
   return (
-    <main className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10">
+    <Root className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10">
       <div className="contents md:sticky md:top-10 md:flex md:flex-col md:gap-4">
-        <header className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <h1 className="m-0 truncate text-[30px] font-extrabold tracking-tight">{current?.name ?? 'Pendientes'}</h1>
-            <span className="text-[13px] font-semibold text-muted">
-              {pending} pendientes · {inSel.length - pending} hechos
-            </span>
-          </div>
-          {active.length === 0 && (
-            <button
-              type="button"
-              onClick={() => setListSheet('new')}
-              className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-line bg-card px-3.5 text-[13px] font-bold text-ink"
-            >
-              <Icon name="plus" size={16} stroke={2.6} /> Lista
-            </button>
-          )}
-        </header>
+        {!gifts && (
+          <header className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h1 className="m-0 truncate text-[30px] font-extrabold tracking-tight">
+                {current?.name ?? 'Pendientes'}
+              </h1>
+              <span className="text-[13px] font-semibold text-muted">
+                {pending} pendientes · {inSel.length - pending} hechos
+              </span>
+            </div>
+            {active.length === 0 && (
+              <button
+                type="button"
+                onClick={() => setListSheet('new')}
+                className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-line bg-card px-3.5 text-[13px] font-bold text-ink"
+              >
+                <Icon name="plus" size={16} stroke={2.6} /> Lista
+              </button>
+            )}
+          </header>
+        )}
 
         {active.length > 0 && (
           <div role="radiogroup" aria-label="Lista" className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
             {(
               [
-                { f: 'all', label: 'Todas' },
-                { f: 'general', label: 'General' },
+                ...(gifts
+                  ? []
+                  : [
+                      { f: 'all', label: 'Todas' },
+                      { f: 'general', label: 'General' },
+                    ]),
                 ...active.map((l) => ({ f: l.id, label: l.name })),
               ] as Array<{ f: ListFilter; label: string }>
             ).map(({ f, label }) => {
@@ -228,7 +261,7 @@ export function ItemsScreen() {
           <EmptyCard>Lista vacía. Lo que escribas arriba se agrega a {current.name}.</EmptyCard>
         )}
         {items.isSuccess && groups.length === 0 && inSel.length > 0 && <EmptyCard>Nada con este filtro.</EmptyCard>}
-        {items.isSuccess && all.length === 0 && (
+        {items.isSuccess && all.length === 0 && !gifts && (
           <div className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-card p-5">
             <p className="m-0 text-[15px] font-bold">Empieza escribiendo arriba, o carga una lista sugerida.</p>
             <p className="m-0 text-[13px] font-medium text-muted">
@@ -255,8 +288,8 @@ export function ItemsScreen() {
       </div>
 
       <ItemSheet item={open} onClose={() => setOpenId(null)} />
-      <ListSheet target={listSheet} onClose={() => setListSheet(null)} />
+      <ListSheet target={listSheet} gift={gifts} onClose={() => setListSheet(null)} />
       {sheet}
-    </main>
+    </Root>
   );
 }

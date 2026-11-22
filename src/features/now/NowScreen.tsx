@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useApp } from '../../app/context';
 import { useItems } from '../../data/items';
 import { useBalances } from '../../data/budgets';
@@ -17,7 +17,6 @@ import { useDeleteWithUndo } from '../items/useDeleteWithUndo';
 import { useSetPriority } from '../items/usePriority';
 import { EventRow } from '../agenda/EventCard';
 import { EventSheet, type EventTarget } from '../agenda/EventSheet';
-import { SettingsSheet } from '../settings/SettingsSheet';
 import { buildToday } from './today';
 
 const R = 19;
@@ -56,7 +55,7 @@ export function NowScreen() {
   const { toggle, sheet } = useItemToggle();
   const [openId, setOpenId] = useState<string | null>(null);
   const [eventTarget, setEventTarget] = useState<EventTarget>(null);
-  const [settings, setSettings] = useState(false);
+  const navigate = useNavigate();
   const theme = useTheme();
   const removeItem = useDeleteWithUndo();
   const priority = useSetPriority();
@@ -91,8 +90,8 @@ export function NowScreen() {
           </button>
           <button
             type="button"
-            onClick={() => setSettings(true)}
-            aria-label="Hogar y ajustes"
+            onClick={() => navigate('/yo')}
+            aria-label="Yo: mis finanzas y ajustes"
             className="flex min-h-11 items-center"
           >
             {members.map((m, i) => (
@@ -179,7 +178,6 @@ export function NowScreen() {
 
       <ItemSheet item={all.find((i) => i.id === openId) ?? null} onClose={() => setOpenId(null)} />
       <EventSheet target={eventTarget} onClose={() => setEventTarget(null)} />
-      <SettingsSheet open={settings} onClose={() => setSettings(false)} />
       {sheet}
     </main>
   );

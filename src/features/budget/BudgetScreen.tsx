@@ -18,44 +18,20 @@ import { Sheet } from '../../ui/Sheet';
 import { SwipeRow } from '../../ui/SwipeRow';
 import { BudgetEditSheet, MovementSheet } from './BudgetSheets';
 import { Icon } from '../../ui/Icon';
-import { Avatar, EmptyCard, Field, PrimaryButton, Segmented, Spinner, haptic, inputCls, useToast } from '../../ui/kit';
-import { FinanceView } from '../finance/FinanceView';
+import { Avatar, EmptyCard, Field, PrimaryButton, Spinner, haptic, inputCls, useToast } from '../../ui/kit';
+import { useLists, type List } from '../../data/lists';
+import { useItems } from '../../data/items';
+import { useNavigate } from 'react-router';
+import { useSelectedList } from '../items/selectedList';
+import { isDone } from '../items/select';
 import { AmountSheet, type AmountMode } from './AmountSheet';
 
-type BudgetView = 'hogar' | 'mio';
-const VIEW_KEY = 'lola:budgetView';
-function getView(): BudgetView {
-  try {
-    return localStorage.getItem(VIEW_KEY) === 'mio' ? 'mio' : 'hogar';
-  } catch {
-    return 'hogar';
-  }
-}
-
-/** Presupuesto del hogar (compartido) o Mis finanzas (privado). Recuerda la última vista por dispositivo. */
+/** Presupuesto del hogar: bolsas compartidas. Las listas con presupuesto descuentan de una bolsa. */
 export function BudgetScreen() {
-  const [view, setView] = useState<BudgetView>(getView);
-  const change = (v: BudgetView) => {
-    setView(v);
-    try {
-      localStorage.setItem(VIEW_KEY, v);
-    } catch {
-      /* modo privado */
-    }
-  };
   return (
     <main className="flex flex-col gap-4">
       <h1 className="m-0 text-[30px] font-bold tracking-tight">Presupuesto</h1>
-      <Segmented
-        label="Presupuesto"
-        value={view}
-        onChange={change}
-        options={[
-          { value: 'hogar', label: 'Hogar' },
-          { value: 'mio', label: 'Mis finanzas' },
-        ]}
-      />
-      {view === 'hogar' ? <HouseholdBudget /> : <FinanceView />}
+      <HouseholdBudget />
     </main>
   );
 }
@@ -72,6 +48,11 @@ function HouseholdBudget() {
   const [creating, setCreating] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Balance | null>(null);
   const [editingMov, setEditingMov] = useState<Movement | null>(null);
+  const lists = useLists(hid);
+  const items = useItems(hid);
+  const navigate = useNavigate();
+  const [, openTaskList] = useSelectedList(hid, 'list');
+  const [, openGiftList] = useSelectedList(hid, 'gift');
 
   const list = balances.data ?? [];
   const current = list.find((b) => b.budget_id === selected) ?? list[0];
@@ -102,6 +83,33 @@ function HouseholdBudget() {
       },
     });
   };
+
+  // Listas que descuentan de esta bolsa y lo que aún planean gastar (compras sin hacer).
+  const linked = (lists.data ?? []).filter((l) => !l.archived_at && l.budget_id === current?.budget_id);
+  const linkedIds = new Set(linked.map((l) => l.id));
+  const planned = (items.data ?? []).reduce(
+    (sum, i) =>
+      i.list_id && linkedIds.has(i.list_id) && i.type === 'compra' && !isDone(i)
+        ? sum + (i.price_estimated_cents ?? 0)
+        : sum,
+    0,
+  );
+  const free = (current?.available_cents ?? 0) - planned;
+  const goToList = (l: List) => {
+    if (l.is_gift) {
+      openGiftList(l.id);
+      try {
+        localStorage.setItem('lola:giftsView', 'listas');
+      } catch {
+        /* modo privado */
+      }
+      navigate('/regalos');
+    } else {
+      openTaskList(l.id);
+      navigate('/pendientes');
+    }
+  };
+  const plannedPct = current && current.added_cents > 0 ? Math.min(100, (planned / current.added_cents) * 100) : 0;
 
   const spentPct =
     current && current.added_cents > 0 ? Math.min(100, (current.spent_cents / current.added_cents) * 100) : 0;
@@ -170,12 +178,42 @@ function HouseholdBudget() {
                 aria-valuemax={100}
                 aria-valuenow={Math.round(spentPct)}
               >
-                <div className="h-3 rounded-full bg-prio-pronto transition-[width]" style={{ width: `${spentPct}%` }} />
+                <div className="flex h-3">
+                  <div className="h-3 bg-prio-pronto transition-[width]" style={{ width: `${spentPct}%` }} />
+                  <div
+                    className="h-3 bg-prio-pronto opacity-40 transition-[width]"
+                    style={{ width: `${Math.min(plannedPct, 100 - spentPct)}%` }}
+                  />
+                </div>
               </div>
               <div className="flex justify-between text-[12px] font-semibold text-on-hero">
                 <span>Gastado {fmtMXN(current.spent_cents)}</span>
                 <span>Aportado {fmtMXN(current.added_cents)}</span>
               </div>
+              {linked.length > 0 && (
+                <div className="flex flex-col gap-2 border-t border-white/15 pt-3">
+                  <div className="flex justify-between text-[12px] font-semibold text-on-hero">
+                    <span>Planeado en listas {fmtMXN(planned)}</span>
+                    <span className={free < 0 ? 'font-extrabold text-[#FF9A87]' : 'font-extrabold text-white'}>
+                      {free < 0 ? `Te pasas ${fmtMXN(-free)}` : `Libre ${fmtMXN(free)}`}
+                    </span>
+                  </div>
+                  <div className="-mx-1 flex flex-wrap gap-1.5">
+                    {linked.map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onClick={() => goToList(l)}
+                        className="flex h-11 items-center gap-1 rounded-full bg-white/10 px-3 text-[13px] font-bold text-white"
+                      >
+                        {l.is_gift && <Icon name="gift" size={14} />}
+                        <span className="max-w-[160px] truncate">{l.name}</span>
+                        <Icon name="chevronRight" size={14} stroke={2.6} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
 
             <div className="grid grid-cols-2 gap-2.5">

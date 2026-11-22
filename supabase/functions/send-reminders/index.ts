@@ -63,7 +63,7 @@ export function giftPayload(g: { list_id: string; name: string; days_left: numbe
   return {
     title: `${when} ${g.name}`,
     body: g.pending === 1 ? '1 regalo sin comprar' : `${g.pending} regalos sin comprar`,
-    url: '/pendientes',
+    url: '/regalos',
     tag: `gifts-${g.list_id}`,
   };
 }

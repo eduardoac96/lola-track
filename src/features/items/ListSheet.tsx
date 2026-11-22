@@ -22,32 +22,44 @@ import { useSelectedList } from './selectedList';
 const NEW_BUDGET = '__new';
 
 /** `target`: 'new' para crear, una lista para editarla, null cerrado. */
-export function ListSheet({ target, onClose }: { target: 'new' | List | null; onClose: () => void }) {
+export function ListSheet({
+  target,
+  onClose,
+  gift = false,
+}: {
+  target: 'new' | List | null;
+  onClose: () => void;
+  /** Crear en Regalos: la lista nace en modo regalos. */
+  gift?: boolean;
+}) {
   if (!target) return null;
   return target === 'new' ? (
-    <CreateForm onClose={onClose} />
+    <CreateForm onClose={onClose} gift={gift} />
   ) : (
     <EditForm key={target.id} list={target} onClose={onClose} />
   );
 }
 
-function CreateForm({ onClose }: { onClose: () => void }) {
+function CreateForm({ onClose, gift }: { onClose: () => void; gift: boolean }) {
   const { hid, userId } = useApp();
   const lists = useLists(hid);
   const create = useCreateList(hid, userId);
   const update = useUpdateList(hid);
-  const [, select] = useSelectedList(hid);
+  const [, select] = useSelectedList(hid, gift ? 'gift' : 'list');
   const toast = useToast();
   const [name, setName] = useState('');
   const all = lists.data ?? [];
   const err = name.trim() ? listNameError(name, all) : null;
-  const archived = all.filter((l) => l.archived_at);
+  const archived = all.filter((l) => l.archived_at && l.is_gift === gift);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim() || err) return;
     const id = newId();
-    create.mutate({ id, name: name.trim() }, { onError: () => toast({ text: 'No se pudo crear la lista' }) });
+    create.mutate(
+      { id, name: name.trim(), is_gift: gift },
+      { onError: () => toast({ text: 'No se pudo crear la lista' }) },
+    );
     select(id);
     onClose();
   };
@@ -63,14 +75,20 @@ function CreateForm({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Sheet open onClose={onClose} title="Nueva lista">
+    <Sheet open onClose={onClose} title={gift ? 'Nueva lista de regalos' : 'Nueva lista'}>
       <form onSubmit={submit} className="flex flex-col gap-4 pb-2">
-        <Field label="Nombre" hint={err ?? 'Por ejemplo: Posada, Mandado, Fiesta fin de año'}>
+        <Field
+          label="Nombre"
+          hint={
+            err ??
+            (gift ? 'Por ejemplo: Navidad 2026, Cumpleaños de Mamá' : 'Por ejemplo: Posada, Mandado, Fiesta fin de año')
+          }
+        >
           <input
             className={inputCls}
             value={name}
             maxLength={40}
-            placeholder="Posada"
+            placeholder={gift ? 'Navidad 2026' : 'Posada'}
             autoComplete="off"
             enterKeyHint="done"
             data-autofocus=""
@@ -110,7 +128,7 @@ function EditForm({ list, onClose }: { list: List; onClose: () => void }) {
   const items = useItems(hid);
   const update = useUpdateList(hid);
   const del = useDeleteList(hid);
-  const [, select] = useSelectedList(hid);
+  const [, select] = useSelectedList(hid, list.is_gift ? 'gift' : 'list');
   const toast = useToast();
   const balances = useBalances(hid);
   const createBudget = useCreateBudget(hid);
@@ -253,7 +271,13 @@ function EditForm({ list, onClose }: { list: List; onClose: () => void }) {
           on={isGift}
           onChange={setIsGift}
           title="Lista de regalos"
-          hint="Para quién, topes por persona y Comprado → Envuelto → Entregado"
+          hint={
+            isGift === list.is_gift
+              ? 'Para quién, topes por persona y Comprado → Envuelto → Entregado'
+              : isGift
+                ? 'Se mueve a la pestaña Regalos'
+                : 'Se mueve a Pendientes'
+          }
         />
         {isGift && (
           <Field label="Fecha del evento" hint="Te avisamos 7 días antes si quedan regalos sin comprar.">

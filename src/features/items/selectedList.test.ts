@@ -32,3 +32,24 @@ describe('lista seleccionada', () => {
     expect(captureListId('a')).toBe('a');
   });
 });
+
+describe('espacios Pendientes / Regalos', () => {
+  const gift = (id: string, archived = false): List => ({ ...list(id, archived), is_gift: true });
+  const lists = [list('posada'), gift('navidad'), gift('cumple-mama', true)];
+
+  it('Pendientes no abre una lista de regalos', () => {
+    expect(resolveListFilter('navidad', lists, 'list')).toBe('all');
+    expect(resolveListFilter('posada', lists, 'list')).toBe('posada');
+  });
+
+  it('Regalos abre la primera lista de regalos activa si la guardada no aplica', () => {
+    expect(resolveListFilter('all', lists, 'gift')).toBe('navidad');
+    expect(resolveListFilter('posada', lists, 'gift')).toBe('navidad');
+    expect(resolveListFilter('cumple-mama', lists, 'gift')).toBe('navidad');
+    expect(resolveListFilter('navidad', lists, 'gift')).toBe('navidad');
+  });
+
+  it('sin listas de regalo, Regalos queda en vacío', () => {
+    expect(resolveListFilter('all', [list('posada')], 'gift')).toBe('all');
+  });
+});

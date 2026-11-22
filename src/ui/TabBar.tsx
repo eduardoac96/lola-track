@@ -6,7 +6,7 @@ const TABS: ReadonlyArray<{ to: string; label: string; icon: IconName }> = [
   { to: '/pendientes', label: 'Pendientes', icon: 'list' },
   { to: '/agenda', label: 'Agenda', icon: 'calendar' },
   { to: '/presupuesto', label: 'Presupuesto', icon: 'wallet' },
-  { to: '/deseos', label: 'Deseos', icon: 'gift' },
+  { to: '/regalos', label: 'Regalos', icon: 'gift' },
 ];
 
 export function TabBar() {

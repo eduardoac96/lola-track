@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useApp } from '../../app/context';
 import type { Item } from '../../data/items';
 import type { List } from '../../data/lists';
-import { useBalances } from '../../data/budgets';
+import { setLastBudget, useBalances } from '../../data/budgets';
+import { useNavigate } from 'react-router';
 import { useDeletePerson, useListPeople, useSavePerson } from '../../data/listPeople';
 import { centsToInput, fmtMXN, parsePesos } from '../../lib/money';
 import { Sheet } from '../../ui/Sheet';
@@ -16,6 +17,7 @@ const TONE: Record<BarTone, string> = { ok: 'var(--color-done)', warn: '#D69A2D'
 export function ListBudgetBar({ list, items }: { list: List; items: readonly Item[] }) {
   const { hid } = useApp();
   const balances = useBalances(hid);
+  const navigate = useNavigate();
   const bal = balances.data?.find((b) => b.budget_id === list.budget_id);
   if (!bal) return null;
   const b = listBudget(bal, items);
@@ -29,7 +31,19 @@ export function ListBudgetBar({ list, items }: { list: List; items: readonly Ite
       className="flex flex-col gap-2.5 rounded-[var(--radius-card)] bg-hero px-4 py-3.5 text-white md:order-none"
     >
       <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-[13px] font-semibold text-on-hero">{bal.name}</span>
+        <button
+          type="button"
+          onClick={() => {
+            setLastBudget(bal.budget_id);
+            navigate('/presupuesto');
+          }}
+          aria-label={`Ver la bolsa ${bal.name} en Presupuesto`}
+          className="-my-3 flex h-11 min-w-0 items-center gap-1 text-[13px] font-semibold text-on-hero"
+        >
+          <Icon name="wallet" size={14} />
+          <span className="truncate">Bolsa {bal.name}</span>
+          <Icon name="chevronRight" size={14} stroke={2.6} />
+        </button>
         <span className="text-[13px] font-semibold text-on-hero">de {fmtMXN(b.total)}</span>
       </div>
       <div

@@ -13,7 +13,8 @@ import { NowScreen } from './features/now/NowScreen';
 import { ItemsScreen } from './features/items/ItemsScreen';
 import { AgendaScreen } from './features/agenda/AgendaScreen';
 import { BudgetScreen } from './features/budget/BudgetScreen';
-import { WishesScreen } from './features/wishes/WishesScreen';
+import { GiftsScreen } from './features/gifts/GiftsScreen';
+import { MeScreen } from './features/me/MeScreen';
 import { QuickAdd } from './features/items/QuickAdd';
 import { useLists } from './data/lists';
 import { captureListId, resolveListFilter, useSelectedList } from './features/items/selectedList';
@@ -80,7 +81,7 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
     () => ({ userId, email, hid, household: data.household, members: data.members, memberById }),
     [userId, email, hid, data, memberById],
   );
-  const showFab = location.pathname !== '/presupuesto' && location.pathname !== '/deseos';
+  const showFab = !['/presupuesto', '/regalos', '/yo'].includes(location.pathname);
 
   return (
     <AppContext.Provider value={ctx}>
@@ -91,7 +92,9 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
             <Route path="/pendientes" element={<ItemsScreen />} />
             <Route path="/agenda" element={<AgendaScreen />} />
             <Route path="/presupuesto" element={<BudgetScreen />} />
-            <Route path="/deseos" element={<WishesScreen />} />
+            <Route path="/regalos" element={<GiftsScreen />} />
+            <Route path="/deseos" element={<Navigate to="/regalos" replace />} />
+            <Route path="/yo" element={<MeScreen />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

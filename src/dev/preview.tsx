@@ -1,6 +1,6 @@
 /**
  * Vista previa de pantallas con datos de ejemplo (solo dev, no entra al build).
- * http://localhost:5173/preview.html?screen=now|items|agenda|budget|finance|wishes|login|onboarding  (&como=pareja: verlo como la pareja)
+ * http://localhost:5173/preview.html?screen=now|items|agenda|budget|finance|wishes|gifts|login|onboarding  (&como=pareja: verlo como la pareja)
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -19,7 +19,8 @@ import { Celebrations } from '../features/celebrate/Celebrations';
 import { ItemsScreen } from '../features/items/ItemsScreen';
 import { AgendaScreen } from '../features/agenda/AgendaScreen';
 import { BudgetScreen } from '../features/budget/BudgetScreen';
-import { WishesScreen } from '../features/wishes/WishesScreen';
+import { GiftsScreen } from '../features/gifts/GiftsScreen';
+import { MeScreen } from '../features/me/MeScreen';
 import type { Wish, WishClaim } from '../data/wishes';
 import { dayKey } from '../lib/dates';
 import type { FinAccount, FinCheck, FinItem, FinMovement, FinPlanPoint, FinPlanStep } from '../data/finance';
@@ -320,8 +321,8 @@ const ctx: AppCtx = {
 
 const screen = new URLSearchParams(location.search).get('screen') ?? 'now';
 
-// Mis finanzas (?screen=finance)
-localStorage.setItem('lola:budgetView', screen === 'finance' ? 'mio' : 'hogar');
+// Regalos: ?screen=wishes abre Deseos, ?screen=gifts abre Para regalar
+localStorage.setItem('lola:giftsView', screen === 'gifts' ? 'listas' : 'deseos');
 {
   const fi = (
     id: string,
@@ -488,8 +489,9 @@ const paths: Record<string, string> = {
   items: '/pendientes',
   agenda: '/agenda',
   budget: '/presupuesto',
-  finance: '/presupuesto',
-  wishes: '/deseos',
+  finance: '/yo',
+  wishes: '/regalos',
+  gifts: '/regalos',
 };
 const isApp = screen in paths;
 
@@ -509,11 +511,12 @@ createRoot(document.getElementById('root')!).render(
                     <Route path="/pendientes" element={<ItemsScreen />} />
                     <Route path="/agenda" element={<AgendaScreen />} />
                     <Route path="/presupuesto" element={<BudgetScreen />} />
-                    <Route path="/deseos" element={<WishesScreen />} />
+                    <Route path="/regalos" element={<GiftsScreen />} />
+                    <Route path="/yo" element={<MeScreen />} />
                   </Routes>
                 </div>
               </div>
-              {screen !== 'budget' && screen !== 'finance' && screen !== 'wishes' && (
+              {!['budget', 'finance', 'wishes', 'gifts'].includes(screen) && (
                 <Fab label="Agregar pendiente" onClick={() => {}} />
               )}
               <TabBar />
