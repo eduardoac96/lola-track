@@ -165,6 +165,8 @@ interface ToastMsg {
   id: number;
   text: string;
   action?: { label: string; run: () => void };
+  /** Acciones extra (p. ej. "Ajustar precio" + "Deshacer"). */
+  actions?: ReadonlyArray<{ label: string; run: () => void }>;
 }
 const ToastCtx = createContext<(t: Omit<ToastMsg, 'id'>, ms?: number) => void>(() => {});
 export const useToast = () => useContext(ToastCtx);
@@ -191,19 +193,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       >
         {msg && (
           <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl bg-hero py-2 pr-2 pl-4 text-[14px] font-semibold text-white shadow-xl">
-            <span>{msg.text}</span>
-            {msg.action && (
+            <span className="min-w-0">{msg.text}</span>
+            {[...(msg.actions ?? []), ...(msg.action ? [msg.action] : [])].map((a) => (
               <button
+                key={a.label}
                 type="button"
-                className="h-10 rounded-xl px-3 font-extrabold text-[#F3B394]"
+                className="h-11 shrink-0 rounded-xl px-3 font-extrabold text-[#F3B394]"
                 onClick={() => {
-                  msg.action?.run();
+                  a.run();
                   setMsg(null);
                 }}
               >
-                {msg.action.label}
+                {a.label}
               </button>
-            )}
+            ))}
           </div>
         )}
       </div>
