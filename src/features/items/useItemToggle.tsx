@@ -43,7 +43,7 @@ export function useItemToggle() {
       complete.mutate({ id: item.id, actualCents: price, budgetId: bag.budget_id });
       toast(
         {
-          text: `Comprado\u00a0· −${fmtMXN(price)}\u00a0de ${bag.name}`,
+          text: `Comprado\u00a0−\u2060${fmtMXN(price)}`,
           actions: [
             { label: 'Ajustar precio', run: () => setBuying({ item, adjust: true }) },
             { label: 'Deshacer', run: () => reopen.mutate(item.id) },

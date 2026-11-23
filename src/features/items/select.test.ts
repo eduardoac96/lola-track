@@ -4,6 +4,7 @@ import {
   areasOf,
   computeDrop,
   groupItems,
+  homeItems,
   inList,
   listNameError,
   itemMeta,
@@ -219,5 +220,19 @@ describe('listas', () => {
     expect(listNameError('Posada', lists, '1')).toBeNull();
     expect(listNameError('Mandado', lists)).toBeNull();
     expect(listNameError('Fiesta fin de año', lists)).toBeNull();
+  });
+});
+
+describe('homeItems', () => {
+  it('quita lo de listas de regalo y deja General y listas normales', () => {
+    const casa = item({ list_id: null });
+    const posada = item({ list_id: 'posada' });
+    const regalo = item({ list_id: 'navidad' });
+    const lists = [
+      { id: 'posada', is_gift: false },
+      { id: 'navidad', is_gift: true },
+    ];
+    expect(homeItems([casa, posada, regalo], lists).map((i) => i.id)).toEqual([casa.id, posada.id]);
+    expect(homeItems([casa, regalo], undefined)).toHaveLength(2);
   });
 });

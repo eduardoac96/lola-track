@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useItems } from '../../data/items';
 import { Icon } from '../../ui/Icon';
 import { haptic } from '../../ui/kit';
-import { progressOf } from '../items/select';
+import { homeItems, progressOf } from '../items/select';
+import { useLists } from '../../data/lists';
 import {
   MILESTONE_TEXT,
   milestoneToCelebrate,
@@ -22,12 +23,14 @@ interface Moment {
 /** Momentos de festejo: todo lo urgente listo y los hitos de "casa lista". Sin rachas ni puntos. */
 export function Celebrations({ hid }: { hid: string }) {
   const items = useItems(hid);
+  const lists = useLists(hid);
   const [moment, setMoment] = useState<Moment | null>(null);
   const prev = useRef<Snap | null>(null);
 
   useEffect(() => {
-    if (!items.data) return;
-    const p = progressOf(items.data);
+    // Espera las listas: sin ellas no se sabe qué es regalo y el avance saltaría.
+    if (!items.data || !lists.data) return;
+    const p = progressOf(homeItems(items.data, lists.data));
     let next: Omit<Moment, 'id'> | null = null;
 
     const seen = readSeen(hid);
@@ -53,7 +56,7 @@ export function Celebrations({ hid }: { hid: string }) {
       // Fuera del render: el efecto sincroniza con datos externos (la cache).
       queueMicrotask(() => setMoment({ id: Date.now(), ...n }));
     }
-  }, [items.data, hid]);
+  }, [items.data, lists.data, hid]);
 
   useEffect(() => {
     if (!moment) return;

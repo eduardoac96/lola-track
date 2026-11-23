@@ -121,6 +121,15 @@ export function pendingPurchasesCents(items: readonly Item[]): number {
   return items.reduce((s, i) => (i.type === 'compra' && !isDone(i) ? s + (i.price_estimated_cents ?? 0) : s), 0);
 }
 
+/** Pendientes de la casa: sin lo de listas de regalo (no cuentan para "casa lista"). */
+export function homeItems(
+  items: readonly Item[],
+  lists: ReadonlyArray<{ id: string; is_gift: boolean }> | undefined,
+): Item[] {
+  const gift = new Set((lists ?? []).filter((l) => l.is_gift).map((l) => l.id));
+  return gift.size ? items.filter((i) => !(i.list_id && gift.has(i.list_id))) : [...items];
+}
+
 export function progressOf(items: readonly Item[]): {
   done: number;
   total: number;

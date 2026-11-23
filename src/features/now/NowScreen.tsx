@@ -11,7 +11,8 @@ import { useTheme } from '../../lib/useTheme';
 import { Avatar, SectionTitle } from '../../ui/kit';
 import { ItemCard } from '../items/ItemCard';
 import { ItemSheet } from '../items/ItemSheet';
-import { progressOf } from '../items/select';
+import { homeItems, progressOf } from '../items/select';
+import { useLists } from '../../data/lists';
 import { useItemToggle } from '../items/useItemToggle';
 import { useDeleteWithUndo } from '../items/useDeleteWithUndo';
 import { useSetPriority } from '../items/usePriority';
@@ -61,7 +62,8 @@ export function NowScreen() {
   const priority = useSetPriority();
 
   const all = useMemo(() => items.data ?? [], [items.data]);
-  const prog = progressOf(all);
+  const lists = useLists(hid);
+  const prog = progressOf(homeItems(all, lists.data));
   const today = useMemo(() => buildToday(all, events.data ?? []), [all, events.data]);
   const main = balances.data?.[0];
   const loading = items.isPending || events.isPending;
