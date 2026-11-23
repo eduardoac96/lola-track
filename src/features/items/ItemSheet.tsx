@@ -8,8 +8,8 @@ import { removePhoto, uploadItemPhoto, usePhotoUrl } from '../../data/photos';
 import { centsToInput, parsePesos } from '../../lib/money';
 import { Sheet } from '../../ui/Sheet';
 import { Icon } from '../../ui/Icon';
-import { Field, GhostButton, PrimaryButton, Segmented, inputCls } from '../../ui/kit';
-import { PRIORITIES, SELECTABLE_TYPES, TYPES, isDone } from './select';
+import { Field, GhostButton, PrimaryButton, Segmented, SwitchRow, inputCls } from '../../ui/kit';
+import { SELECTABLE_TYPES, TYPES, isDone } from './select';
 import { useDeleteWithUndo } from './useDeleteWithUndo';
 
 interface Draft {
@@ -189,12 +189,11 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
           onChange={(v) => set('type', v)}
           options={SELECTABLE_TYPES.map((k) => ({ value: k, label: TYPES[k].label }))}
         />
-        <Segmented
-          label="Prioridad"
-          size="sm"
-          value={d.priority}
-          onChange={(v) => set('priority', v)}
-          options={PRIORITIES.map((p) => ({ value: p.value, label: p.label }))}
+        <SwitchRow
+          on={d.priority === 'urgente'}
+          onChange={(v) => set('priority', v ? 'urgente' : d.priority === 'urgente' ? 'pronto' : d.priority)}
+          title="Urgente"
+          hint="Va hasta arriba y entra en los avisos de 8, 13 y 19 h"
         />
         <div className="grid grid-cols-2 gap-3">
           <Field label="Área">

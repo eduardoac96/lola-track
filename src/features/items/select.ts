@@ -9,11 +9,18 @@ export type TypeFilter = 'todo' | 'compra' | 'tarea';
 export const matchesType = (t: ItemType, f: TypeFilter): boolean =>
   f === 'todo' || (f === 'compra' ? t === 'compra' : t !== 'compra');
 
+/**
+ * La prioridad es un interruptor: urgente o no. "No urgente" se guarda como `pronto`;
+ * el valor heredado `algun_dia` se muestra junto con lo no urgente y se normaliza al moverlo.
+ */
 export const PRIORITIES: ReadonlyArray<{ value: ItemPriority; label: string; dot: string }> = [
   { value: 'urgente', label: 'Urgente', dot: '#D2483A' },
-  { value: 'pronto', label: 'Pronto', dot: '#D69A2D' },
-  { value: 'algun_dia', label: 'Algún día', dot: '#A89D93' },
+  { value: 'pronto', label: 'Lo demás', dot: '#D69A2D' },
 ];
+
+/** Sección del tablero a la que pertenece una prioridad. */
+export const bucketOf = (p: ItemPriority): ItemPriority => (p === 'urgente' ? 'urgente' : 'pronto');
+export const isUrgent = (i: Pick<Item, 'priority'>): boolean => i.priority === 'urgente';
 
 export const TYPES: Record<ItemType, { label: string; tint: string; fg: string; icon: IconName }> = {
   compra: { label: 'Compra', tint: 'var(--color-compra-tint)', fg: 'var(--color-compra-fg)', icon: 'compra' },
@@ -102,7 +109,7 @@ export function groupItems(
   };
 
   const groups = PRIORITIES.map((p) => {
-    const its = visible.filter((i) => i.priority === p.value).sort(order);
+    const its = visible.filter((i) => bucketOf(i.priority) === p.value).sort(order);
     return { priority: p.value, label: p.label, dot: p.dot, items: its, pending: its.filter((i) => !isDone(i)).length };
   }).filter((g) => g.items.length > 0);
 
@@ -167,17 +174,17 @@ export function computeDrop(
   if (overId.startsWith('group:')) {
     target = overId.slice(6) as ItemPriority;
     const list = pendingByPriority[target].filter((i) => i.id !== activeId);
-    if (target === active.priority) return null; // soltar en su propia sección: sin cambio
+    if (target === bucketOf(active.priority)) return null; // soltar en su propia sección: sin cambio
     index = list.length;
     return { priority: target, sort_order: sortOrderAt(list, index) };
   }
 
   const over = all.find((i) => i.id === overId);
   if (!over) return null;
-  target = over.priority;
+  target = bucketOf(over.priority);
   const original = pendingByPriority[target];
   const list = original.filter((i) => i.id !== activeId);
-  if (target === active.priority) {
+  if (target === bucketOf(active.priority)) {
     const from = original.findIndex((i) => i.id === activeId);
     const to = original.findIndex((i) => i.id === overId);
     if (from === to) return null;

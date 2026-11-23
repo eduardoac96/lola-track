@@ -65,10 +65,20 @@ describe('items/select', () => {
   const viejo = item({ priority: 'pronto', done_at: '2026-10-01T10:00:00Z' });
   const all = [cuna, muebles, lampara, monitor, viejo];
 
-  it('agrupa por prioridad en orden y omite grupos vacíos', () => {
+  it('agrupa en Urgente y Lo demás (algún día heredado cae en Lo demás)', () => {
     const { groups } = groupItems(all, { type: 'todo', area: null, showAllDone: true, now: NOW });
-    expect(groups.map((g) => g.priority)).toEqual(['urgente', 'pronto', 'algun_dia']);
+    expect(groups.map((g) => g.priority)).toEqual(['urgente', 'pronto']);
     expect(groups[0]?.pending).toBe(2);
+    const algun = all.filter((i) => i.priority === 'algun_dia');
+    expect(algun.length).toBeGreaterThan(0);
+    expect(algun.every((i) => groups[1]?.items.includes(i))).toBe(true);
+  });
+
+  it('mover un pendiente heredado de algún día lo normaliza a pronto', () => {
+    const a = item({ priority: 'algun_dia', sort_order: 0 });
+    const b = item({ priority: 'pronto', sort_order: 10 });
+    const res = computeDrop({ urgente: [], pronto: [a, b], algun_dia: [] }, a.id, b.id);
+    expect(res?.priority).toBe('pronto');
   });
 
   it('pendientes primero (por orden manual), hechos al final', () => {

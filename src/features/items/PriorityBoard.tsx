@@ -23,7 +23,7 @@ import type { Item, ItemPriority } from '../../data/items';
 import { Icon } from '../../ui/Icon';
 import { SectionTitle } from '../../ui/kit';
 import { ItemCard } from './ItemCard';
-import { PRIORITIES, computeDrop, groupDropId, isDone, type ItemGroup } from './select';
+import { PRIORITIES, bucketOf, computeDrop, groupDropId, isDone, type ItemGroup } from './select';
 import type { GiftStage } from './gifts';
 
 interface Props {
@@ -88,7 +88,8 @@ export function PriorityBoard({
 
   const groupOf = (id: string): ItemPriority | null => {
     if (id.startsWith('group:')) return id.slice(6) as ItemPriority;
-    return all.find((i) => i.id === id)?.priority ?? null;
+    const p = all.find((i) => i.id === id)?.priority;
+    return p ? bucketOf(p) : null;
   };
 
   const onStart = ({ active: a }: DragStartEvent) => setActiveId(String(a.id));

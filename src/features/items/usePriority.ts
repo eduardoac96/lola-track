@@ -1,9 +1,6 @@
 import { useApp } from '../../app/context';
 import { useUpdateItem, type Item, type ItemPriority } from '../../data/items';
 import { haptic, useToast } from '../../ui/kit';
-import { PRIORITIES } from './select';
-
-const labelOf = (p: ItemPriority) => PRIORITIES.find((x) => x.value === p)?.label ?? p;
 
 /** Cambia prioridad (y opcionalmente orden) con aviso y "Deshacer". */
 export function useSetPriority() {
@@ -16,9 +13,11 @@ export function useSetPriority() {
     haptic();
     const before = { priority: item.priority, sort_order: item.sort_order };
     update.mutate({ id: item.id, patch: { priority, ...(sortOrder !== undefined ? { sort_order: sortOrder } : {}) } });
-    if (item.priority !== priority) {
+    if ((item.priority === 'urgente') !== (priority === 'urgente')) {
       toast({
-        text: `"${item.title.length > 24 ? `${item.title.slice(0, 23)}…` : item.title}" → ${labelOf(priority)}`,
+        text: `"${item.title.length > 24 ? `${item.title.slice(0, 23)}…` : item.title}" ${
+          priority === 'urgente' ? 'es urgente' : 'ya no es urgente'
+        }`,
         action: { label: 'Deshacer', run: () => update.mutate({ id: item.id, patch: before }) },
       });
     }

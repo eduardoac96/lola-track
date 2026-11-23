@@ -36,7 +36,7 @@ export function QuickAdd({
       id: newId(),
       title: parsed.title,
       type: gift ? 'compra' : parsed.type,
-      priority: parsed.priority,
+      priority: parsed.priority === 'urgente' ? 'urgente' : 'pronto',
       area: gift ? null : parsed.area,
       recipient: gift && parsed.area ? parsed.area.slice(0, 40) : null,
       price_estimated_cents: parsed.priceCents,
@@ -48,7 +48,7 @@ export function QuickAdd({
     onCreated?.();
   };
 
-  const prio = PRIORITIES.find((p) => p.value === parsed.priority);
+  const prio = parsed.priority === 'urgente' ? PRIORITIES[0] : undefined;
   const showPreview = text.trim().length > 0;
   const type = gift ? 'compra' : parsed.type;
 
@@ -114,7 +114,7 @@ export function QuickAdd({
             </>
           ) : (
             <>
-              <b>$precio</b> la vuelve compra · <b>!urgente</b> <b>!pronto</b> <b>!algun</b> · <b>@área</b>
+              <b>$precio</b> la vuelve compra · <b>!urgente</b> · <b>@área</b>
             </>
           )}
         </p>
