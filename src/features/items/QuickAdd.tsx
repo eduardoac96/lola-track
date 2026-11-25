@@ -11,6 +11,7 @@ export function QuickAdd({
   onCreated,
   autoFocus,
   listId = null,
+  ownerId = null,
   gift = false,
   placeholder = 'Cuna $4500 !urgente @cuarto',
 }: {
@@ -20,6 +21,8 @@ export function QuickAdd({
   autoFocus?: boolean;
   /** Lista donde cae lo capturado (null = General). */
   listId?: string | null;
+  /** Dueño de lo capturado (null = Casa). */
+  ownerId?: string | null;
   placeholder?: string;
 }) {
   const { hid, userId } = useApp();
@@ -42,6 +45,7 @@ export function QuickAdd({
       price_estimated_cents: parsed.priceCents,
       sort_order: -Date.now(),
       list_id: listId,
+      owner_id: ownerId,
     });
     setText('');
     input.current?.focus();

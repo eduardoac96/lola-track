@@ -23,6 +23,7 @@ interface Draft {
   link: string;
   notes: string;
   list: string; // '' = General
+  owner: string; // '' = Casa
   recipient: string;
   stage: GiftStage;
 }
@@ -38,6 +39,7 @@ const toDraft = (i: Item): Draft => ({
   link: i.link_url ?? '',
   notes: i.notes ?? '',
   list: i.list_id ?? '',
+  owner: i.owner_id ?? '',
   recipient: i.recipient ?? '',
   stage: stageOf(i),
 });
@@ -47,7 +49,7 @@ export function ItemSheet({ item, onClose }: { item: Item | null; onClose: () =>
 }
 
 function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
-  const { hid, memberById } = useApp();
+  const { hid, memberById, members, userId } = useApp();
   const update = useUpdateItem(hid);
   const lists = useLists(hid);
   const activeLists = (lists.data ?? []).filter((l) => !l.archived_at || l.id === item.list_id);
@@ -90,6 +92,7 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
         link_url: d.link.trim() || null,
         notes: d.notes.trim() || null,
         list_id: d.list || null,
+        ...(members.length > 1 ? { owner_id: d.owner || null } : {}),
         recipient: gift ? d.recipient.trim() || null : item.recipient,
         ...(gift && isDone(item) && d.stage !== 'idea' ? { gift_stage: d.stage === 'comprado' ? null : d.stage } : {}),
       },
@@ -154,6 +157,18 @@ function ItemForm({ item, onClose }: { item: Item; onClose: () => void }) {
               ))}
             </select>
           </Field>
+        )}
+        {members.length > 1 && !gift && (
+          <Segmented
+            label="De quién"
+            size="sm"
+            value={d.owner}
+            onChange={(v) => set('owner', v)}
+            options={[
+              { value: '', label: 'Casa' },
+              ...members.map((m) => ({ value: m.user_id, label: m.user_id === userId ? 'Mío' : m.display_name })),
+            ]}
+          />
         )}
         {gift && (
           <Field label="Para quién">

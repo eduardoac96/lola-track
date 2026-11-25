@@ -36,6 +36,10 @@ interface Props {
   onMove: (i: Item, priority: ItemPriority, sortOrder: number) => void;
   /** Nombre de lista por pendiente (vista "Todas"); undefined = no mostrar. */
   listNameOf?: (i: Item) => string | undefined;
+  /** Dueño por pendiente personal; undefined = no mostrar. */
+  ownerNameOf?: (i: Item) => string | undefined;
+  /** No urgentes sin movimiento: van aparte, plegados, debajo del tablero. */
+  stale?: { items: Item[]; onRevive: (i: Item) => void };
   /** Estado de regalo si el pendiente es de una lista de regalos. */
   stageOf?: (i: Item) => GiftStage | undefined;
   onAdvanceStage?: (i: Item) => void;
@@ -56,6 +60,8 @@ export function PriorityBoard({
   onToggleUrgent,
   onMove,
   listNameOf,
+  ownerNameOf,
+  stale,
   stageOf,
   onAdvanceStage,
   olderDone,
@@ -84,6 +90,7 @@ export function PriorityBoard({
   const all = full.flatMap((g) => g.items);
   const doneAll = all.filter(isDone).sort((a, b) => (b.done_at ?? '').localeCompare(a.done_at ?? ''));
   const [showDone, setShowDone] = useState(false);
+  const [showStale, setShowStale] = useState(false);
   const active = activeId ? all.find((i) => i.id === activeId) : undefined;
 
   const groupOf = (id: string): ItemPriority | null => {
@@ -129,9 +136,44 @@ export function PriorityBoard({
             onDelete={onDelete}
             onToggleUrgent={onToggleUrgent}
             listNameOf={listNameOf}
+            ownerNameOf={ownerNameOf}
             stageOf={stageOf}
           />
         ))}
+      {stale && stale.items.length > 0 && !activeId && (
+        <section className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setShowStale((v) => !v)}
+            aria-expanded={showStale}
+            className="flex h-11 items-center gap-2 self-start rounded-full px-1 text-[14px] font-bold text-muted"
+          >
+            <span className={`transition-transform ${showStale ? 'rotate-90' : ''}`}>
+              <Icon name="chevronRight" size={16} stroke={2.5} />
+            </span>
+            Estancados ({stale.items.length})
+          </button>
+          {showStale && (
+            <>
+              <p className="m-0 px-1 text-[12px] font-medium text-muted">
+                Sin moverse en más de 2 semanas. Desliza a la derecha para reactivar, a la izquierda para borrar.
+              </p>
+              {stale.items.map((it) => (
+                <ItemCard
+                  key={it.id}
+                  item={it}
+                  onToggle={() => onToggle(it)}
+                  onOpen={() => onOpen(it)}
+                  onDelete={() => onDelete(it)}
+                  onRevive={() => stale.onRevive(it)}
+                  listName={listNameOf?.(it)}
+                  ownerName={ownerNameOf?.(it)}
+                />
+              ))}
+            </>
+          )}
+        </section>
+      )}
       {(doneAll.length > 0 || (olderDone?.count ?? 0) > 0) && !activeId && (
         <section className="flex flex-col gap-2">
           <button
@@ -154,6 +196,7 @@ export function PriorityBoard({
                 onOpen={() => onOpen(it)}
                 onDelete={() => onDelete(it)}
                 listName={listNameOf?.(it)}
+                ownerName={ownerNameOf?.(it)}
                 stage={stageOf?.(it)}
                 onAdvanceStage={onAdvanceStage ? () => onAdvanceStage(it) : undefined}
               />
@@ -192,6 +235,7 @@ function Section({
   onDelete,
   onToggleUrgent,
   listNameOf,
+  ownerNameOf,
   stageOf,
 }: {
   group: ItemGroup;
@@ -203,6 +247,7 @@ function Section({
   onDelete: (i: Item) => void;
   onToggleUrgent: (i: Item) => void;
   listNameOf?: (i: Item) => string | undefined;
+  ownerNameOf?: (i: Item) => string | undefined;
   stageOf?: (i: Item) => GiftStage | undefined;
 }) {
   const { setNodeRef } = useDroppable({ id: groupDropId(group.priority) });
@@ -227,6 +272,7 @@ function Section({
             onDelete={() => onDelete(it)}
             onToggleUrgent={() => onToggleUrgent(it)}
             listName={listNameOf?.(it)}
+            ownerName={ownerNameOf?.(it)}
             stage={stageOf?.(it)}
           />
         ))}
@@ -256,11 +302,13 @@ function SortableCard({
   onDelete,
   onToggleUrgent,
   listName,
+  ownerName,
   stage,
 }: {
   item: Item;
   hidden: boolean;
   listName?: string;
+  ownerName?: string;
   stage?: GiftStage;
   onToggle: () => void;
   onOpen: () => void;
@@ -282,6 +330,7 @@ function SortableCard({
         onDelete={hidden ? undefined : onDelete}
         onToggleUrgent={hidden ? undefined : onToggleUrgent}
         listName={listName}
+        ownerName={ownerName}
         stage={stage}
         handle={
           <button

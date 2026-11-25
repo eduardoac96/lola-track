@@ -31,6 +31,8 @@ export function ItemCard({
   onToggleUrgent,
   handle,
   listName,
+  ownerName,
+  onRevive,
   stage,
   onAdvanceStage,
 }: {
@@ -41,6 +43,10 @@ export function ItemCard({
   onAdvanceStage?: () => void;
   /** Nombre de la lista a mostrar en la línea de detalle (solo en la vista "Todas"). */
   listName?: string;
+  /** Dueño a mostrar si el pendiente es personal (vistas que mezclan dueños). */
+  ownerName?: string;
+  /** Estancado: deslizar a la derecha lo reactiva (en vez de urgente). */
+  onRevive?: () => void;
   onToggle: () => void;
   onOpen: () => void;
   /** Si viene, la tarjeta se puede deslizar a la izquierda para eliminar. */
@@ -64,7 +70,7 @@ export function ItemCard({
           <span className={`line-clamp-2 text-[15px] leading-snug font-bold ${done ? 'line-through' : ''}`}>
             {item.title}
           </span>
-          <span className="truncate text-[12px] font-medium text-muted">{itemMeta(item, listName)}</span>
+          <span className="truncate text-[12px] font-medium text-muted">{itemMeta(item, listName, ownerName)}</span>
         </span>
       </button>
       {stage && stage !== 'idea' && (
@@ -110,15 +116,17 @@ export function ItemCard({
     <SwipeRow
       onDelete={onDelete}
       right={
-        onToggleUrgent && !done
-          ? {
-              label: item.priority === 'urgente' ? 'Quitar urgente' : 'Urgente',
-              icon: 'flag',
-              bg: item.priority === 'urgente' ? 'bg-[#776A60]' : 'bg-[#D2483A]',
-              run: onToggleUrgent,
-              key: 'u',
-            }
-          : undefined
+        onRevive && !done
+          ? { label: 'Reactivar', icon: 'flag', bg: 'bg-[#5F7F64]', run: onRevive, key: 'r' }
+          : onToggleUrgent && !done
+            ? {
+                label: item.priority === 'urgente' ? 'Quitar urgente' : 'Urgente',
+                icon: 'flag',
+                bg: item.priority === 'urgente' ? 'bg-[#776A60]' : 'bg-[#D2483A]',
+                run: onToggleUrgent,
+                key: 'u',
+              }
+            : undefined
       }
       label={item.title}
       className="rounded-[var(--radius-card)]"

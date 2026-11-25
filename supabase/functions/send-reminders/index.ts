@@ -46,6 +46,14 @@ export function digestText(d: { done_count: number; spent_cents: number; urgent_
   return `Esta semana: ${parts.join(', ')}.`;
 }
 
+/** Urgentes que le tocan a `userId`: los de la casa (dueño null) y los suyos. */
+export function urgentTitlesFor(titles: string[], owners: Array<string | null> | null, userId: string): string[] {
+  return titles.filter((_, i) => {
+    const o = owners?.[i] ?? null;
+    return o === null || o === userId;
+  });
+}
+
 /** Push de urgentes (un `tag` por turno: iOS no vuelve a sonar si se reutiliza el tag). */
 export function urgentPayload(titles: string[], slot: string) {
   const n = titles.length;
@@ -75,15 +83,27 @@ async function urgentCount(sb: SupabaseClient, householdId: string): Promise<num
   return typeof data === 'number' ? data : 0;
 }
 
-async function sendToHousehold(sb: SupabaseClient, householdId: string, payload: object, stats: Stats) {
+/**
+ * Push a cada dispositivo del hogar. `payloadFor(userId)` permite un aviso distinto por persona
+ * (urgentes personales); si devuelve null, ese usuario no recibe nada.
+ */
+async function sendToHousehold(
+  sb: SupabaseClient,
+  householdId: string,
+  payload: object | ((userId: string) => object | null),
+  stats: Stats,
+) {
   const { data: subs } = await sb
     .from('push_subscriptions')
-    .select('id, endpoint, p256dh, auth')
+    .select('id, user_id, endpoint, p256dh, auth')
     .eq('household_id', householdId);
   if (!subs?.length) return;
-  const body = JSON.stringify({ ...payload, badge: await urgentCount(sb, householdId) });
+  const badge = await urgentCount(sb, householdId);
   await Promise.all(
     (subs ?? []).map(async (s) => {
+      const p = typeof payload === 'function' ? payload(s.user_id) : payload;
+      if (!p) return;
+      const body = JSON.stringify({ ...p, badge });
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body, {
           TTL: 3600,
@@ -219,7 +239,16 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!claimed) continue;
     urgent++;
-    await sendToHousehold(sb, u.household_id, urgentPayload(u.titles, u.slot), stats);
+    // Casa (sin dueño) → a todos; personal → solo a su dueño.
+    await sendToHousehold(
+      sb,
+      u.household_id,
+      (userId) => {
+        const mine = urgentTitlesFor(u.titles, u.owner_ids, userId);
+        return mine.length ? urgentPayload(mine, u.slot) : null;
+      },
+      stats,
+    );
   }
 
   // 5) Listas de regalos (una vez por fecha; cambiar la fecha rearma el aviso)

@@ -71,6 +71,7 @@ export function useCreateItem(hid: string, userId: string) {
         link_url: null,
         list_id: null,
         notes: null,
+        owner_id: null,
         photo_path: null,
         price_actual_cents: null,
         price_estimated_cents: null,

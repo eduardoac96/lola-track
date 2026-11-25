@@ -18,6 +18,7 @@ import { MeScreen } from './features/me/MeScreen';
 import { QuickAdd } from './features/items/QuickAdd';
 import { useLists } from './data/lists';
 import { captureListId, resolveListFilter, useSelectedList } from './features/items/selectedList';
+import { captureOwnerId, resolveOwnerFilter, useOwnerFilter } from './features/items/ownerFilter';
 import { TabBar } from './ui/TabBar';
 import { Sheet } from './ui/Sheet';
 import { EmptyCard, Fab, PrimaryButton, Spinner, ToastProvider } from './ui/kit';
@@ -72,6 +73,16 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
   // En Pendientes, el + agrega a la lista abierta; en las demás pantallas, a General.
   const fabListId = location.pathname === '/pendientes' ? captureListId(resolveListFilter(rawList, lists.data)) : null;
   const fabList = lists.data?.find((l) => l.id === fabListId);
+  const [rawOwner] = useOwnerFilter(hid);
+  const fabOwnerId =
+    location.pathname === '/pendientes' && data.members.length > 1
+      ? captureOwnerId(
+          resolveOwnerFilter(
+            rawOwner,
+            data.members.map((m) => m.user_id),
+          ),
+        )
+      : null;
 
   const memberById = useCallback(
     (id: string | null | undefined) => (id ? data.members.find((m) => m.user_id === id) : undefined),
@@ -106,7 +117,7 @@ function Shell({ userId, email, data }: { userId: string; email: string; data: H
         title={fabList ? `Nuevo en ${fabList.name}` : 'Nuevo pendiente'}
       >
         <div className="pb-2">
-          <QuickAdd autoFocus listId={fabListId} onCreated={() => setQuickAdd(false)} />
+          <QuickAdd autoFocus listId={fabListId} ownerId={fabOwnerId} onCreated={() => setQuickAdd(false)} />
         </div>
       </Sheet>
       <TabBar />

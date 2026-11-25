@@ -6,6 +6,8 @@ import {
   groupItems,
   homeItems,
   inList,
+  isStale,
+  ofOwner,
   listNameError,
   itemMeta,
   pendingPurchasesCents,
@@ -35,6 +37,7 @@ function item(p: Partial<Item>): Item {
     due_reminded_at: null,
     link_url: null,
     notes: null,
+    owner_id: null,
     photo_path: null,
     done_at: null,
     done_by: null,
@@ -234,5 +237,53 @@ describe('homeItems', () => {
     ];
     expect(homeItems([casa, posada, regalo], lists).map((i) => i.id)).toEqual([casa.id, posada.id]);
     expect(homeItems([casa, regalo], undefined)).toHaveLength(2);
+  });
+});
+
+describe('items/select · dueño y estancados (T50)', () => {
+  const casa = item({ title: 'Casa', updated_at: '2026-11-07T10:00:00Z' });
+  const mio = item({ title: 'Mío', owner_id: 'odin', updated_at: '2026-11-07T10:00:00Z' });
+  const suyo = item({ title: 'Suyo', owner_id: 'selena', updated_at: '2026-11-07T10:00:00Z' });
+  const all = [casa, mio, suyo];
+  const titles = (f: string) => all.filter((i) => ofOwner(i, f, 'odin')).map((i) => i.title);
+
+  it('filtra por dueño', () => {
+    expect(titles('mix')).toEqual(['Casa', 'Mío']);
+    expect(titles('casa')).toEqual(['Casa']);
+    expect(titles('odin')).toEqual(['Mío']);
+    expect(titles('selena')).toEqual(['Suyo']);
+    expect(titles('all')).toEqual(['Casa', 'Mío', 'Suyo']);
+  });
+
+  it('estancado = no urgente, sin hacer y sin cambios en 14 días', () => {
+    const now = NOW.getTime();
+    expect(isStale(item({ updated_at: '2026-10-20T10:00:00Z' }), now)).toBe(true);
+    expect(isStale(item({ updated_at: '2026-11-01T10:00:00Z' }), now)).toBe(false);
+    expect(isStale(item({ updated_at: '2026-10-20T10:00:00Z', priority: 'urgente' }), now)).toBe(false);
+    expect(isStale(item({ updated_at: '2026-10-20T10:00:00Z', done_at: '2026-10-21T10:00:00Z' }), now)).toBe(false);
+  });
+
+  it('groupItems separa estancados y respeta el dueño', () => {
+    const viejo = item({ title: 'Viejo', updated_at: '2026-10-01T10:00:00Z' });
+    const ajeno = item({ title: 'Ajeno viejo', owner_id: 'selena', updated_at: '2026-10-01T10:00:00Z' });
+    const r = groupItems([...all, viejo, ajeno], {
+      type: 'todo',
+      area: null,
+      showAllDone: true,
+      now: NOW,
+      owner: { filter: 'mix', me: 'odin' },
+      splitStale: true,
+    });
+    expect(r.stale.map((i) => i.title)).toEqual(['Viejo']);
+    expect(
+      r.groups
+        .flatMap((g) => g.items)
+        .map((i) => i.title)
+        .sort(),
+    ).toEqual(['Casa', 'Mío']);
+  });
+
+  it('itemMeta muestra el dueño', () => {
+    expect(itemMeta(mio, undefined, 'Odin')).toBe('Tarea · Odin');
   });
 });

@@ -513,6 +513,7 @@ export type Database = {
           link_url: string | null;
           list_id: string | null;
           notes: string | null;
+          owner_id: string | null;
           photo_path: string | null;
           price_actual_cents: number | null;
           price_estimated_cents: number | null;
@@ -538,6 +539,7 @@ export type Database = {
           link_url?: string | null;
           list_id?: string | null;
           notes?: string | null;
+          owner_id?: string | null;
           photo_path?: string | null;
           price_actual_cents?: number | null;
           price_estimated_cents?: number | null;
@@ -563,6 +565,7 @@ export type Database = {
           link_url?: string | null;
           list_id?: string | null;
           notes?: string | null;
+          owner_id?: string | null;
           photo_path?: string | null;
           price_actual_cents?: number | null;
           price_estimated_cents?: number | null;

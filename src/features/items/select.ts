@@ -40,9 +40,30 @@ export type ListFilter = 'all' | 'general' | (string & {});
 export const inList = (i: Pick<Item, 'list_id'>, f: ListFilter): boolean =>
   f === 'all' || (f === 'general' ? i.list_id == null : i.list_id === f);
 
+/**
+ * De quién: 'mix' = Casa + míos (vista por defecto), 'casa' = sin dueño, 'all' = todo,
+ * o el id de un miembro (sus personales).
+ */
+export type OwnerFilter = 'mix' | 'casa' | 'all' | (string & {});
+
+export const ofOwner = (i: Pick<Item, 'owner_id'>, f: OwnerFilter, me: string): boolean =>
+  f === 'all' ||
+  (f === 'mix' ? i.owner_id == null || i.owner_id === me : f === 'casa' ? i.owner_id == null : i.owner_id === f);
+
+/** Días sin moverse para que un pendiente no urgente pase a "Estancados". */
+export const STALE_DAYS = 14;
+
+/** Pendiente sin hacer, no urgente y sin cambios (ni reordenarlo) en `days` días. */
+export const isStale = (
+  i: Pick<Item, 'done_at' | 'priority' | 'updated_at'>,
+  now: number = Date.now(),
+  days = STALE_DAYS,
+): boolean => i.done_at == null && i.priority !== 'urgente' && Date.parse(i.updated_at) < now - days * DAY_MS;
+
 /** `listName`: se muestra cuando la vista mezcla listas ("Todas"). */
-export function itemMeta(i: Item, listName?: string): string {
+export function itemMeta(i: Item, listName?: string, ownerName?: string): string {
   const parts: string[] = [TYPES[i.type].label];
+  if (ownerName) parts.push(ownerName);
   if (listName) parts.push(listName);
   if (i.recipient) parts.push(`Para ${i.recipient}`);
   if (i.area) parts.push(i.area);
@@ -80,10 +101,14 @@ export function groupItems(
     area: string | null;
     showAllDone: boolean;
     list?: ListFilter;
+    /** De quién + yo (para 'mix'). Sin esto no filtra por dueño. */
+    owner?: { filter: OwnerFilter; me: string };
     now?: Date;
     hideDoneAfterDays?: number;
+    /** Separa los no urgentes sin movimiento en `stale` (no van en `groups`). */
+    splitStale?: boolean;
   },
-): { groups: ItemGroup[]; hiddenDone: number } {
+): { groups: ItemGroup[]; hiddenDone: number; stale: Item[] } {
   const now = (opts.now ?? new Date()).getTime();
   const cutoff = now - (opts.hideDoneAfterDays ?? 14) * DAY_MS;
   const areaKey = opts.area?.toLocaleLowerCase('es-MX') ?? null;
@@ -92,6 +117,7 @@ export function groupItems(
   const visible = items.filter((i) => {
     if (!inList(i, opts.list ?? 'all')) return false;
     if (!matchesType(i.type, opts.type)) return false;
+    if (opts.owner && !ofOwner(i, opts.owner.filter, opts.owner.me)) return false;
     if (areaKey && i.area?.toLocaleLowerCase('es-MX') !== areaKey) return false;
     if (!opts.showAllDone && i.done_at && Date.parse(i.done_at) < cutoff) {
       hiddenDone++;
@@ -108,12 +134,18 @@ export function groupItems(
     return a.sort_order - b.sort_order;
   };
 
+  const stale = opts.splitStale
+    ? visible.filter((i) => isStale(i, now)).sort((a, b) => a.updated_at.localeCompare(b.updated_at))
+    : [];
+  const staleIds = new Set(stale.map((i) => i.id));
+  const fresh = staleIds.size ? visible.filter((i) => !staleIds.has(i.id)) : visible;
+
   const groups = PRIORITIES.map((p) => {
-    const its = visible.filter((i) => bucketOf(i.priority) === p.value).sort(order);
+    const its = fresh.filter((i) => bucketOf(i.priority) === p.value).sort(order);
     return { priority: p.value, label: p.label, dot: p.dot, items: its, pending: its.filter((i) => !isDone(i)).length };
   }).filter((g) => g.items.length > 0);
 
-  return { groups, hiddenDone };
+  return { groups, hiddenDone, stale };
 }
 
 /** Suma del precio estimado de compras no hechas (centavos). */

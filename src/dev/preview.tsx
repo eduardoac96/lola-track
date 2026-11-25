@@ -67,6 +67,7 @@ const it = (p: Partial<Item>): Item => ({
   due_reminded_at: null,
   link_url: null,
   notes: null,
+  owner_id: null,
   photo_path: null,
   done_at: null,
   done_by: null,

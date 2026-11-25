@@ -11,7 +11,18 @@ import { useDeleteWithUndo } from './useDeleteWithUndo';
 import { ItemSheet } from './ItemSheet';
 import { QuickAdd } from './QuickAdd';
 import { ChecklistButton } from './ChecklistButton';
-import { areasOf, groupItems, inList, isDone, pendingPurchasesCents, type ListFilter, type TypeFilter } from './select';
+import {
+  areasOf,
+  groupItems,
+  inList,
+  isDone,
+  ofOwner,
+  pendingPurchasesCents,
+  type ListFilter,
+  type OwnerFilter,
+  type TypeFilter,
+} from './select';
+import { captureOwnerId, resolveOwnerFilter, useOwnerFilter } from './ownerFilter';
 import { ListSheet } from './ListSheet';
 import { captureListId, resolveListFilter, useSelectedList, type ListScope } from './selectedList';
 import { useItemToggle } from './useItemToggle';
@@ -26,7 +37,7 @@ const TYPE_LABEL: Record<TypeFilter, string> = { todo: 'Todo', compra: 'Compras'
  */
 export function ItemsScreen({ scope = 'list' }: { scope?: ListScope }) {
   const gifts = scope === 'gift';
-  const { hid } = useApp();
+  const { hid, userId, members, memberById } = useApp();
   const items = useItems(hid);
   const updateItem = useUpdateItem(hid);
   const lists = useLists(hid);
@@ -40,6 +51,23 @@ export function ItemsScreen({ scope = 'list' }: { scope?: ListScope }) {
   const [showAllDone, setShowAllDone] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [rawOwner, setOwner] = useOwnerFilter(hid);
+  // Dueños solo en Pendientes y con más de un miembro; Regalos siempre ve todo.
+  const byOwner = !gifts && members.length > 1;
+  const owner: OwnerFilter = byOwner
+    ? resolveOwnerFilter(
+        rawOwner,
+        members.map((m) => m.user_id),
+      )
+    : 'all';
+  const others = members.filter((m) => m.user_id !== userId);
+  const ownerOptions: Array<{ f: OwnerFilter; label: string }> = [
+    { f: 'mix', label: 'Casa y míos' },
+    { f: 'casa', label: 'Casa' },
+    { f: userId, label: 'Míos' },
+    ...others.map((m) => ({ f: m.user_id, label: m.display_name })),
+    { f: 'all', label: 'Todos' },
+  ];
 
   const everything = useMemo(() => items.data ?? [], [items.data]);
   const live = useMemo(() => (lists.data ?? []).filter((l) => !l.archived_at), [lists.data]);
@@ -53,17 +81,35 @@ export function ItemsScreen({ scope = 'list' }: { scope?: ListScope }) {
   );
   const list = resolveListFilter(rawList, lists.data, scope);
   const current = active.find((l) => l.id === list);
-  const inSel = useMemo(() => all.filter((i) => inList(i, list)), [all, list]);
+  const inSel = useMemo(
+    () => all.filter((i) => inList(i, list) && ofOwner(i, owner, userId)),
+    [all, list, owner, userId],
+  );
   const areas = useMemo(() => areasOf(inSel), [inSel]);
-  const { groups, hiddenDone } = useMemo(
-    () => groupItems(all, { type, area, showAllDone, list }),
-    [all, type, area, showAllDone, list],
+  const { groups, hiddenDone, stale } = useMemo(
+    () =>
+      groupItems(all, {
+        type,
+        area,
+        showAllDone,
+        list,
+        owner: { filter: owner, me: userId },
+        splitStale: !gifts,
+      }),
+    [all, type, area, showAllDone, list, owner, userId, gifts],
   );
   const pending = inSel.filter((i) => !isDone(i)).length;
-  const pendingIn = (f: ListFilter) => all.filter((i) => !isDone(i) && inList(i, f)).length;
+  const pendingIn = (f: ListFilter) =>
+    all.filter((i) => !isDone(i) && inList(i, f) && ofOwner(i, owner, userId)).length;
   const names = useMemo(() => new Map(active.map((l) => [l.id, l.name])), [active]);
   const listNameOf =
     list === 'all' && active.length > 0 ? (i: Item) => (i.list_id ? names.get(i.list_id) : undefined) : undefined;
+  // En vistas que mezclan dueños, el nombre marca lo personal.
+  const ownerNameOf =
+    byOwner && (owner === 'mix' || owner === 'all')
+      ? (i: Item) => (i.owner_id ? (memberById(i.owner_id)?.display_name ?? undefined) : undefined)
+      : undefined;
+  const revive = (i: Item) => updateItem.mutate({ id: i.id, patch: { sort_order: -Date.now() } });
   const pickList = (f: ListFilter) => {
     if (f === list && current) {
       setListSheet(current); // tocar la lista abierta = editarla
@@ -165,7 +211,30 @@ export function ItemsScreen({ scope = 'list' }: { scope?: ListScope }) {
           </div>
         )}
 
+        {byOwner && (
+          <div role="radiogroup" aria-label="De quién" className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+            {ownerOptions.map(({ f, label }) => {
+              const on = f === owner;
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setOwner(f)}
+                  className={`h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-bold ${
+                    on ? 'border-primary bg-primary text-white' : 'border-line bg-card text-ink'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <QuickAdd
+          ownerId={captureOwnerId(owner)}
           listId={captureListId(list)}
           gift={current?.is_gift ?? false}
           placeholder={current?.is_gift ? 'Lego $800 @Mamá' : current ? `Agregar a ${current.name}…` : undefined}
@@ -260,7 +329,9 @@ export function ItemsScreen({ scope = 'list' }: { scope?: ListScope }) {
         {items.isSuccess && all.length > 0 && inSel.length === 0 && current && (
           <EmptyCard>Lista vacía. Lo que escribas arriba se agrega a {current.name}.</EmptyCard>
         )}
-        {items.isSuccess && groups.length === 0 && inSel.length > 0 && <EmptyCard>Nada con este filtro.</EmptyCard>}
+        {items.isSuccess && groups.length === 0 && stale.length === 0 && inSel.length > 0 && (
+          <EmptyCard>Nada con este filtro.</EmptyCard>
+        )}
         {items.isSuccess && all.length === 0 && !gifts && (
           <div className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-card p-5">
             <p className="m-0 text-[15px] font-bold">Empieza escribiendo arriba, o carga una lista sugerida.</p>
@@ -271,7 +342,7 @@ export function ItemsScreen({ scope = 'list' }: { scope?: ListScope }) {
           </div>
         )}
 
-        {groups.length > 0 && (
+        {(groups.length > 0 || stale.length > 0) && (
           <PriorityBoard
             groups={groups}
             onToggle={toggle}
@@ -280,6 +351,8 @@ export function ItemsScreen({ scope = 'list' }: { scope?: ListScope }) {
             onToggleUrgent={priority.toggleUrgent}
             onMove={(it, p, sortOrder) => priority.set(it, p, sortOrder)}
             listNameOf={listNameOf}
+            ownerNameOf={ownerNameOf}
+            stale={stale.length ? { items: stale, onRevive: revive } : undefined}
             stageOf={(i) => (isGiftItem(i) ? stageOf(i) : undefined)}
             onAdvanceStage={advanceStage}
             olderDone={!showAllDone ? { count: hiddenDone, onShow: () => setShowAllDone(true) } : undefined}
